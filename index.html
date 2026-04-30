@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Volley Manager</title>
+
+<style>
+body { font-family: Arial; margin:0; background:#f4f6f8; }
+header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
+
+.nav {
+    display:flex;
+    justify-content:space-around;
+    background:#fff;
+    padding:10px;
+    border-top:1px solid #ccc;
+    position:fixed;
+    bottom:0;
+    width:100%;
+}
+
+.nav button {
+    background:none;
+    border:none;
+    font-size:16px;
+}
+
+.container { padding:15px; padding-bottom:70px; }
+
+.card {
+    background:white;
+    padding:15px;
+    margin-bottom:10px;
+    border-radius:10px;
+}
+
+.hidden { display:none; }
+
+.player {
+    display:flex;
+    justify-content:space-between;
+    margin:5px 0;
+}
+
+/* POPUP */
+.modal {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-content {
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    width:80%;
+    max-width:300px;
+}
+
+.modal-content button {
+    display:block;
+    width:100%;
+    margin:10px 0;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+}
+
+.btn-green { background:#16a34a; color:white; }
+.btn-blue { background:#2563eb; color:white; }
+.btn-red { background:#dc2626; color:white; }
+.btn-gray { background:#ccc; }
+</style>
+</head>
+
+<body>
+
+<header>🏐 Volley Manager</header>
+
+<div class="container">
+
+<!-- HOME -->
+<div id="home">
+    <div class="card">
+        <h3>Prossimi allenamenti</h3>
+        <div id="nextTrainings"></div>
+    </div>
+</div>
+
+<!-- SQUADRA -->
+<div id="team" class="hidden">
+    <div class="card">
+        <h3>Giocatrici</h3>
+        <input id="playerName" placeholder="Nome">
+        <button onclick="addPlayer()">Aggiungi</button>
+        <div id="players"></div>
+    </div>
+</div>
+
+<!-- ALLENAMENTI -->
+<div id="trainings" class="hidden">
+    <div class="card">
+        <h3>Nuovo allenamento</h3>
+        <input type="date" id="date">
+        <input type="time" id="time">
+        <button onclick="addTraining()">Crea</button>
+    </div>
+
+    <div class="card">
+        <h3>Lista allenamenti</h3>
+        <div id="trainingList"></div>
+    </div>
+</div>
+
+<!-- PRESENZE -->
+<div id="attendance" class="hidden">
+    <div class="card">
+        <h3 id="selectedTrainingTitle">Allenamento</h3>
+        <div id="attendanceList"></div>
+        <button onclick="saveAttendance()">Salva</button>
+    </div>
+</div>
+
+<!-- STAT -->
+<div id="stats" class="hidden">
+    <div class="card">
+        <h3>Statistiche</h3>
+        <div id="statsList"></div>
+    </div>
+</div>
+
+</div>
+
+<div class="nav">
+    <button onclick="showPage('home')">🏠</button>
+    <button onclick="showPage('team')">👥</button>
+    <button onclick="showPage('trainings')">📅</button>
+    <button onclick="showPage('stats')">📊</button>
+</div>
+
+<!-- POPUP -->
+<div id="modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Motivo assenza</h3>
+        <button class="btn-green" onclick="setReason('infortunio')">🤕 Infortunio</button>
+        <button class="btn-blue" onclick="setReason('gita')">🎒 Gita</button>
+        <button class="btn-red" onclick="setReason('non motivato')">❌ Non motivato</button>
+        <button class="btn-gray" onclick="closeModal()">Annulla</button>
+    </div>
+</div>
+
+<script>
+let players = JSON.parse(localStorage.getItem("players")) || [];
+let trainings = JSON.parse(localStorage.getItem("trainings")) || [];
+let selectedTraining = null;
+let currentPlayer = null;
+
+function saveAll() {
+    localStorage.setItem("players", JSON.stringify(players));
+    localStorage.setItem("trainings", JSON.stringify(trainings));
+}
+
+function showPage(page) {
+    document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+    document.getElementById(page).classList.remove('hidden');
+    render();
+}
+
+function addPlayer() {
+    let name = document.getElementById("playerName").value;
+    if (!name) return;
+
+    players.push({ name: name });
+    document.getElementById("playerName").value = "";
+    saveAll();
+    render();
+}
+
+function addTraining() {
+    let date = document.getElementById("date").value;
+    let time = document.getElementById("time").value;
+    if (!date || !time) return;
+
+    trainings.push({
+        id: Date.now(),
+        date,
+        time,
+        attendance: {}
+    });
+
+    saveAll();
+    render();
+}
+
+function selectTraining(id) {
+    selectedTraining = trainings.find(t => t.id === id);
+    showPage("attendance");
+}
+
+function togglePresence(name) {
+    let current = selectedTraining.attendance[name];
+
+    if (!current) {
+        selectedTraining.attendance[name] = { status: true };
+    } else if (current.status === true) {
+        currentPlayer = name;
+        openModal();
+        return;
+    } else {
+        selectedTraining.attendance[name] = { status: true };
+    }
+
+    render();
+}
+
+function openModal() {
+    document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+    document.getElementById("modal").classList.add("hidden");
+}
+
+function setReason(reason) {
+    selectedTraining.attendance[currentPlayer] = {
+        status: false,
+        reason: reason
+    };
+
+    closeModal();
+    render();
+}
+
+function saveAttendance() {
+    saveAll();
+    alert("Salvato!");
+}
+
+function render() {
+
+    // TEAM
+    let playersDiv = document.getElementById("players");
+    playersDiv.innerHTML = "";
+    players.forEach(p => {
+        playersDiv.innerHTML += `<div>${p.name}</div>`;
+    });
+
+    // TRAININGS
+    let list = document.getElementById("trainingList");
+    list.innerHTML = "";
+    trainings.forEach(t => {
+        list.innerHTML += `
+            <div>
+                ${t.date} ${t.time}
+                <button onclick="selectTraining(${t.id})">Apri</button>
+            </div>
+        `;
+    });
+
+    // HOME
+    let next = document.getElementById("nextTrainings");
+    next.innerHTML = "";
+    trainings.slice(-3).forEach(t => {
+        next.innerHTML += `<div>${t.date} ${t.time}</div>`;
+    });
+
+    // ATTENDANCE
+    if (selectedTraining) {
+        document.getElementById("selectedTrainingTitle").innerText =
+            selectedTraining.date + " " + selectedTraining.time;
+
+        let attDiv = document.getElementById("attendanceList");
+        attDiv.innerHTML = "";
+
+        players.forEach(p => {
+            let data = selectedTraining.attendance[p.name];
+            let status = data ? data.status : true;
+            let reason = data && data.reason ? " (" + data.reason + ")" : "";
+
+            attDiv.innerHTML += `
+                <div class="player">
+                    <span>${p.name}</span>
+                    <button onclick="togglePresence('${p.name}')">
+                        ${status ? "✅" : "❌"}${reason}
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    // STATS
+    let stats = document.getElementById("statsList");
+    stats.innerHTML = "";
+
+    players.forEach(p => {
+        let total = 0;
+        let present = 0;
+
+        trainings.forEach(t => {
+            let data = t.attendance[p.name];
+            if (data !== undefined) {
+                total++;
+                if (data.status === true) present++;
+            }
+        });
+
+        let perc = total ? Math.round((present / total) * 100) : 0;
+        stats.innerHTML += `<div>${p.name}: ${perc}%</div>`;
+    });
+}
+
+render();
+</script>
+
+</body>
+</html>
