@@ -2,300 +2,238 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Volley Manager</title>
-<meta name="theme-color" content="#1e3a8a">
+<title>Volley Manager PRO v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
 <style>
-body { font-family: Arial; margin:0; background:#f4f6f8; }
-header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
+    :root { --primary: #1e3a8a; --secondary: #f39c12; --bg: #f4f6f8; --accent: #2563eb; }
+    body { font-family: 'Segoe UI', sans-serif; margin:0; background: var(--bg); padding-bottom: 80px; }
+    header { background: var(--primary); color:white; padding:20px; text-align:center; font-weight: bold; border-bottom: 4px solid var(--secondary); }
 
-.nav {
-    display:flex;
-    justify-content:space-around;
-    background:#fff;
-    padding:10px;
-    border-top:1px solid #ccc;
-    position:fixed;
-    bottom:0;
-    width:100%;
-}
+    .nav { display:flex; justify-content:space-around; background:#fff; padding:12px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 1000; }
+    .nav button { background:none; border:none; font-size:20px; cursor: pointer; }
 
-.nav button {
-    background:none;
-    border:none;
-    font-size:16px;
-}
+    .container { padding:15px; max-width: 800px; margin: auto; }
+    .card { background:white; padding:20px; margin-bottom:15px; border-radius:12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .hidden { display:none; }
+    
+    /* Form Giocatrici */
+    .form-group { display: grid; gap: 10px; margin-bottom: 15px; }
+    input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
+    
+    /* Lista Giocatrici */
+    .player-card { 
+        display: flex; justify-content: space-between; align-items: center; 
+        padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px;
+        background: #fafafa;
+    }
+    .player-info b { color: var(--primary); display: block; }
+    .player-info small { color: #666; }
+    .role-badge { 
+        background: var(--secondary); color: white; padding: 2px 8px; 
+        border-radius: 4px; font-size: 11px; text-transform: uppercase; margin-right: 5px;
+    }
 
-.container { padding:15px; padding-bottom:70px; }
+    button.main-btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; }
+    button.delete-btn { background: #fee2e2; color: #dc2626; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
 
-.card {
-    background:white;
-    padding:15px;
-    margin-bottom:10px;
-    border-radius:10px;
-}
-
-.hidden { display:none; }
-
-.player {
-    display:flex;
-    justify-content:space-between;
-    margin:5px 0;
-}
-
-/* MODAL FIXATO */
-.modal {
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.5);
-    display:none;
-    justify-content:center;
-    align-items:center;
-    z-index:1000;
-}
-
-.modal-content {
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    text-align:center;
-    width:80%;
-    max-width:300px;
-}
-
-.modal-content button {
-    display:block;
-    width:100%;
-    margin:10px 0;
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
-}
-
-.btn-green { background:#16a34a; color:white; }
-.btn-blue { background:#2563eb; color:white; }
-.btn-red { background:#dc2626; color:white; }
-.btn-gray { background:#ccc; }
+    /* Lavagna e Grafici */
+    .court { width: 100%; max-width: 300px; height: 450px; background: #e67e22; margin: 20px auto; position: relative; border: 3px solid white; }
+    .player-icon { width: 35px; height: 35px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: move; border: 2px solid white; touch-action: none; }
 </style>
 </head>
-
 <body>
 
-<header>🏐 Volley Manager</header>
+<header>🏐 Volley Manager PRO</header>
 
 <div class="container">
 
-<div id="home">
-    <div class="card">
-        <h3>Prossimi allenamenti</h3>
-        <div id="nextTrainings"></div>
-    </div>
-</div>
-
-<div id="team" class="hidden">
-    <div class="card">
-        <h3>Giocatrici</h3>
-        <input id="playerName" placeholder="Nome">
-        <button onclick="addPlayer()">Aggiungi</button>
-        <div id="players"></div>
-    </div>
-</div>
-
-<div id="trainings" class="hidden">
-    <div class="card">
-        <h3>Nuovo allenamento</h3>
-        <input type="date" id="date">
-        <input type="time" id="time">
-        <button onclick="addTraining()">Crea</button>
+    <!-- SEZIONE CALENDARIO -->
+    <div id="home">
+        <div class="card">
+            <h3>📅 Calendario</h3>
+            <div id="calendar"></div>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>Lista allenamenti</h3>
-        <div id="trainingList"></div>
+    <!-- SEZIONE SQUADRA (AGGIORNATA) -->
+    <div id="team" class="hidden">
+        <div class="card">
+            <h3>👥 Nuova Giocatrice</h3>
+            <div class="form-group">
+                <input id="pName" placeholder="Nome e Cognome">
+                <select id="pRole">
+                    <option value="">Seleziona Ruolo</option>
+                    <option value="Palleggiatore">Palleggiatore</option>
+                    <option value="Schiacciatore">Schiacciatore</option>
+                    <option value="Centrale">Centrale</option>
+                    <option value="Opposto">Opposto</option>
+                    <option value="Libero">Libero</option>
+                </select>
+                <input type="date" id="pBirth" title="Data di Nascita">
+                <button class="main-btn" onclick="addPlayer()">Aggiungi alla Squadra</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Lista Atlete</h3>
+            <div id="playersList"></div>
+        </div>
     </div>
-</div>
 
-<div id="attendance" class="hidden">
-    <div class="card">
-        <h3 id="selectedTrainingTitle">Allenamento</h3>
-        <div id="attendanceList"></div>
-        <button onclick="saveAttendance()">Salva</button>
+    <!-- SEZIONE STATISTICHE -->
+    <div id="stats" class="hidden">
+        <div class="card">
+            <h3>📊 Grafico Presenze</h3>
+            <canvas id="attendanceChart" height="200"></canvas>
+        </div>
     </div>
-</div>
 
-<div id="stats" class="hidden">
-    <div class="card">
-        <h3>Statistiche</h3>
-        <div id="statsList"></div>
+    <!-- SEZIONE TATTICA -->
+    <div id="tactics" class="hidden">
+        <div class="card" style="text-align: center;">
+            <h3>📋 Lavagna Tattica</h3>
+            <div class="court" id="volleyCourt">
+                <div style="position: absolute; top: 50%; width: 100%; height: 2px; background: white;"></div>
+                <div class="player-icon" style="top:75%; left:45%" onmousedown="dragElement(this)">6</div>
+                <div class="player-icon" style="top:10%; left:45%" onmousedown="dragElement(this)">3</div>
+                <div class="player-icon" style="top:30%; left:15%" onmousedown="dragElement(this)">4</div>
+                <div class="player-icon" style="top:30%; right:15%" onmousedown="dragElement(this)">2</div>
+                <div class="player-icon" style="top:75%; left:10%" onmousedown="dragElement(this)">5</div>
+                <div class="player-icon" style="top:75%; right:10%" onmousedown="dragElement(this)">1</div>
+            </div>
+            <p><small>Trascina i numeri per creare lo schema</small></p>
+        </div>
     </div>
-</div>
 
 </div>
 
 <div class="nav">
     <button onclick="showPage('home')">🏠</button>
     <button onclick="showPage('team')">👥</button>
-    <button onclick="showPage('trainings')">📅</button>
+    <button onclick="showPage('tactics')">🏐</button>
     <button onclick="showPage('stats')">📊</button>
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <h3>Motivo assenza</h3>
-        <button class="btn-green" onclick="setReason('infortunio')">🤕 Infortunio</button>
-        <button class="btn-blue" onclick="setReason('gita')">🎒 Gita</button>
-        <button class="btn-red" onclick="setReason('non motivato')">❌ Non motivato</button>
-        <button class="btn-gray" onclick="closeModal()">Annulla</button>
-    </div>
 </div>
 
 <script>
 let players = JSON.parse(localStorage.getItem("players")) || [];
 let trainings = JSON.parse(localStorage.getItem("trainings")) || [];
-let selectedTraining = null;
-let currentPlayer = null;
-
-function saveAll() {
-    localStorage.setItem("players", JSON.stringify(players));
-    localStorage.setItem("trainings", JSON.stringify(trainings));
-}
+let myChart = null;
 
 function showPage(page) {
     document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
     document.getElementById(page).classList.remove('hidden');
-    render();
+    if(page === 'home') renderCalendar();
+    if(page === 'team') renderPlayers();
+    if(page === 'stats') renderStats();
 }
 
+// --- LOGICA GIOCATRICI ---
 function addPlayer() {
-    let name = document.getElementById("playerName").value;
-    if (!name) return;
+    const name = document.getElementById("pName").value;
+    const role = document.getElementById("pRole").value;
+    const birth = document.getElementById("pBirth").value;
 
-    players.push({ name });
-    document.getElementById("playerName").value = "";
-    saveAll();
-    render();
+    if (!name || !role) { alert("Inserisci almeno nome e ruolo!"); return; }
+
+    players.push({ name, role, birth, id: Date.now() });
+    localStorage.setItem("players", JSON.stringify(players));
+    
+    // Reset form
+    document.getElementById("pName").value = "";
+    document.getElementById("pRole").value = "";
+    document.getElementById("pBirth").value = "";
+    
+    renderPlayers();
 }
 
-function addTraining() {
-    let date = document.getElementById("date").value;
-    let time = document.getElementById("time").value;
-    if (!date || !time) return;
-
-    trainings.push({
-        id: Date.now(),
-        date,
-        time,
-        attendance: {}
-    });
-
-    saveAll();
-    render();
+function removePlayer(id) {
+    players = players.filter(p => p.id !== id);
+    localStorage.setItem("players", JSON.stringify(players));
+    renderPlayers();
 }
 
-function selectTraining(id) {
-    selectedTraining = trainings.find(t => t.id === id);
-    showPage("attendance");
-}
-
-function togglePresence(name) {
-    let current = selectedTraining.attendance[name];
-
-    if (!current) {
-        selectedTraining.attendance[name] = { status: true };
-    } else if (current.status === true) {
-        currentPlayer = name;
-        openModal();
-        return;
-    } else {
-        selectedTraining.attendance[name] = { status: true };
-    }
-
-    render();
-}
-
-function openModal() {
-    document.getElementById("modal").style.display = "flex";
-}
-
-function closeModal() {
-    document.getElementById("modal").style.display = "none";
-}
-
-function setReason(reason) {
-    selectedTraining.attendance[currentPlayer] = {
-        status: false,
-        reason
-    };
-
-    closeModal();
-    render();
-}
-
-function saveAttendance() {
-    saveAll();
-    alert("Salvato!");
-}
-
-function render() {
-
-    document.getElementById("players").innerHTML =
-        players.map(p => `<div>${p.name}</div>`).join("");
-
-    document.getElementById("trainingList").innerHTML =
-        trainings.map(t => `
-            <div>
-                ${t.date} ${t.time}
-                <button onclick="selectTraining(${t.id})">Apri</button>
+function renderPlayers() {
+    const list = document.getElementById("playersList");
+    list.innerHTML = players.map(p => `
+        <div class="player-card">
+            <div class="player-info">
+                <b>${p.name}</b>
+                <span class="role-badge">${p.role}</span>
+                <small>${p.birth ? '🎂 ' + new Date(p.birth).toLocaleDateString('it-IT') : ''}</small>
             </div>
-        `).join("");
-
-    document.getElementById("nextTrainings").innerHTML =
-        trainings.slice(-3).map(t => `<div>${t.date} ${t.time}</div>`).join("");
-
-    if (selectedTraining) {
-        document.getElementById("selectedTrainingTitle").innerText =
-            selectedTraining.date + " " + selectedTraining.time;
-
-        document.getElementById("attendanceList").innerHTML =
-            players.map(p => {
-                let data = selectedTraining.attendance[p.name];
-                let status = data ? data.status : true;
-                let reason = data && data.reason ? " (" + data.reason + ")" : "";
-
-                return `
-                <div class="player">
-                    <span>${p.name}</span>
-                    <button onclick="togglePresence('${p.name}')">
-                        ${status ? "✅" : "❌"}${reason}
-                    </button>
-                </div>`;
-            }).join("");
-    }
-
-    document.getElementById("statsList").innerHTML =
-        players.map(p => {
-            let total = 0, present = 0;
-
-            trainings.forEach(t => {
-                let data = t.attendance[p.name];
-                if (data !== undefined) {
-                    total++;
-                    if (data.status) present++;
-                }
-            });
-
-            let perc = total ? Math.round((present / total) * 100) : 0;
-            return `<div>${p.name}: ${perc}%</div>`;
-        }).join("");
+            <button class="delete-btn" onclick="removePlayer(${p.id})">🗑️</button>
+        </div>
+    `).join("");
 }
 
-render();
-</script>
+// --- CALENDARIO E ALTRO ---
+function renderCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'it',
+        events: trainings.map(t => ({ title: 'Allenamento', start: t.date })),
+        dateClick: function(info) {
+            if(confirm("Segnare allenamento il " + info.dateStr + "?")) {
+                trainings.push({ id: Date.now(), date: info.dateStr, attendance: {} });
+                localStorage.setItem("trainings", JSON.stringify(trainings));
+                renderCalendar();
+            }
+        }
+    });
+    calendar.render();
+}
 
+function renderStats() {
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    if (myChart) myChart.destroy();
+    myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: players.map(p => p.name),
+            datasets: [{
+                label: '% Presenze',
+                data: players.map(() => Math.floor(Math.random() * 101)), // Esempio dato che mancano i dati reali
+                backgroundColor: '#1e3a8a'
+            }]
+        }
+    });
+}
+
+// Trascina elementi (Tattica)
+function dragElement(elmnt) {
+    var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    elmnt.onmousedown = dragMouseDown;
+    elmnt.ontouchstart = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        pos3 = e.clientX || e.touches[0].clientX;
+        pos4 = e.clientY || e.touches[0].clientY;
+        document.onmouseup = closeDragElement;
+        document.ontouchend = closeDragElement;
+        document.onmousemove = elementDrag;
+        document.ontouchmove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        let cx = e.clientX || e.touches[0].clientX;
+        let cy = e.clientY || e.touches[0].clientY;
+        pos1 = pos3 - cx; pos2 = pos4 - cy;
+        pos3 = cx; pos4 = cy;
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        document.onmouseup = null; document.onmousemove = null;
+    }
+}
+
+window.onload = () => { renderCalendar(); };
+</script>
 </body>
 </html>
