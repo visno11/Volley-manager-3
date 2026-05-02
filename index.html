@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1e3a8a">
 <meta charset="UTF-8">
 <title>Volley Manager</title>
+<meta name="theme-color" content="#1e3a8a">
 
 <style>
 body { font-family: Arial; margin:0; background:#f4f6f8; }
@@ -44,7 +43,7 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     margin:5px 0;
 }
 
-/* POPUP */
+/* MODAL FIXATO */
 .modal {
     position:fixed;
     top:0;
@@ -52,9 +51,10 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     width:100%;
     height:100%;
     background:rgba(0,0,0,0.5);
-    display:flex;
+    display:none;
     justify-content:center;
     align-items:center;
+    z-index:1000;
 }
 
 .modal-content {
@@ -89,7 +89,6 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
 
 <div class="container">
 
-<!-- HOME -->
 <div id="home">
     <div class="card">
         <h3>Prossimi allenamenti</h3>
@@ -97,7 +96,6 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     </div>
 </div>
 
-<!-- SQUADRA -->
 <div id="team" class="hidden">
     <div class="card">
         <h3>Giocatrici</h3>
@@ -107,7 +105,6 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     </div>
 </div>
 
-<!-- ALLENAMENTI -->
 <div id="trainings" class="hidden">
     <div class="card">
         <h3>Nuovo allenamento</h3>
@@ -122,7 +119,6 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     </div>
 </div>
 
-<!-- PRESENZE -->
 <div id="attendance" class="hidden">
     <div class="card">
         <h3 id="selectedTrainingTitle">Allenamento</h3>
@@ -131,7 +127,6 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     </div>
 </div>
 
-<!-- STAT -->
 <div id="stats" class="hidden">
     <div class="card">
         <h3>Statistiche</h3>
@@ -148,8 +143,8 @@ header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
     <button onclick="showPage('stats')">📊</button>
 </div>
 
-<!-- POPUP -->
-<div id="modal" class="modal hidden">
+<!-- MODAL -->
+<div id="modal" class="modal">
     <div class="modal-content">
         <h3>Motivo assenza</h3>
         <button class="btn-green" onclick="setReason('infortunio')">🤕 Infortunio</button>
@@ -180,7 +175,7 @@ function addPlayer() {
     let name = document.getElementById("playerName").value;
     if (!name) return;
 
-    players.push({ name: name });
+    players.push({ name });
     document.getElementById("playerName").value = "";
     saveAll();
     render();
@@ -224,17 +219,17 @@ function togglePresence(name) {
 }
 
 function openModal() {
-    document.getElementById("modal").classList.remove("hidden");
+    document.getElementById("modal").style.display = "flex";
 }
 
 function closeModal() {
-    document.getElementById("modal").classList.add("hidden");
+    document.getElementById("modal").style.display = "none";
 }
 
 function setReason(reason) {
     selectedTraining.attendance[currentPlayer] = {
         status: false,
-        reason: reason
+        reason
     };
 
     closeModal();
@@ -248,75 +243,55 @@ function saveAttendance() {
 
 function render() {
 
-    // TEAM
-    let playersDiv = document.getElementById("players");
-    playersDiv.innerHTML = "";
-    players.forEach(p => {
-        playersDiv.innerHTML += `<div>${p.name}</div>`;
-    });
+    document.getElementById("players").innerHTML =
+        players.map(p => `<div>${p.name}</div>`).join("");
 
-    // TRAININGS
-    let list = document.getElementById("trainingList");
-    list.innerHTML = "";
-    trainings.forEach(t => {
-        list.innerHTML += `
+    document.getElementById("trainingList").innerHTML =
+        trainings.map(t => `
             <div>
                 ${t.date} ${t.time}
                 <button onclick="selectTraining(${t.id})">Apri</button>
             </div>
-        `;
-    });
+        `).join("");
 
-    // HOME
-    let next = document.getElementById("nextTrainings");
-    next.innerHTML = "";
-    trainings.slice(-3).forEach(t => {
-        next.innerHTML += `<div>${t.date} ${t.time}</div>`;
-    });
+    document.getElementById("nextTrainings").innerHTML =
+        trainings.slice(-3).map(t => `<div>${t.date} ${t.time}</div>`).join("");
 
-    // ATTENDANCE
     if (selectedTraining) {
         document.getElementById("selectedTrainingTitle").innerText =
             selectedTraining.date + " " + selectedTraining.time;
 
-        let attDiv = document.getElementById("attendanceList");
-        attDiv.innerHTML = "";
+        document.getElementById("attendanceList").innerHTML =
+            players.map(p => {
+                let data = selectedTraining.attendance[p.name];
+                let status = data ? data.status : true;
+                let reason = data && data.reason ? " (" + data.reason + ")" : "";
 
-        players.forEach(p => {
-            let data = selectedTraining.attendance[p.name];
-            let status = data ? data.status : true;
-            let reason = data && data.reason ? " (" + data.reason + ")" : "";
-
-            attDiv.innerHTML += `
+                return `
                 <div class="player">
                     <span>${p.name}</span>
                     <button onclick="togglePresence('${p.name}')">
                         ${status ? "✅" : "❌"}${reason}
                     </button>
-                </div>
-            `;
-        });
+                </div>`;
+            }).join("");
     }
 
-    // STATS
-    let stats = document.getElementById("statsList");
-    stats.innerHTML = "";
+    document.getElementById("statsList").innerHTML =
+        players.map(p => {
+            let total = 0, present = 0;
 
-    players.forEach(p => {
-        let total = 0;
-        let present = 0;
+            trainings.forEach(t => {
+                let data = t.attendance[p.name];
+                if (data !== undefined) {
+                    total++;
+                    if (data.status) present++;
+                }
+            });
 
-        trainings.forEach(t => {
-            let data = t.attendance[p.name];
-            if (data !== undefined) {
-                total++;
-                if (data.status === true) present++;
-            }
-        });
-
-        let perc = total ? Math.round((present / total) * 100) : 0;
-        stats.innerHTML += `<div>${p.name}: ${perc}%</div>`;
-    });
+            let perc = total ? Math.round((present / total) * 100) : 0;
+            return `<div>${p.name}: ${perc}%</div>`;
+        }).join("");
 }
 
 render();
