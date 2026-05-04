@@ -9,20 +9,22 @@
 
     <style>
         :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --edit: #10b981; }
-        body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; }
+        body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; overflow-x: hidden; }
         header { background: var(--primary); color: white; padding: 1rem; text-align: center; font-weight: bold; border-bottom: 4px solid var(--secondary); }
         .container { padding: 15px; max-width: 900px; margin: auto; }
-        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
-        .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 2000; }
+        .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 4000; }
         .nav button { background:none; border:none; font-size:24px; cursor: pointer; }
         
-        /* Lavagna Tattica con Panchina */
-        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; }
-        .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; }
-        .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; overflow: hidden; }
-        #tacticsCanvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
-        .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; }
+        /* Lavagna Tattica FIX */
+        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; position: relative; min-height: 520px; }
+        .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; z-index: 5; }
+        .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; z-index: 10; }
+        #tacticsCanvas { position: absolute; top: 0; left: 0; z-index: 11; cursor: crosshair; }
+        
+        /* Pallini FIX: z-index alto per non sparire mai */
+        .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 100; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; touch-action: none; }
         .bench .player-circle { position: relative; top: auto !important; left: auto !important; }
 
         .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
@@ -32,10 +34,10 @@
         .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-all { background: #10b981; margin-bottom: 15px; }
 
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 3000; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 5000; }
         .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 15px; max-height: 80vh; overflow-y: auto; }
         .sync-status { font-size: 0.7rem; color: #10b981; text-align: center; margin-top: 5px; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
     </style>
 </head>
@@ -46,11 +48,13 @@
 </header>
 
 <div class="container">
+    <!-- HOME -->
     <div id="home">
         <div class="card"><div class="section-title"><span>📅</span> Calendario</div><div id="calendar"></div></div>
         <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
+    <!-- SQUADRA -->
     <div id="team" class="hidden">
         <div class="card">
             <h3>Nuova Atleta</h3>
@@ -67,6 +71,7 @@
         <div class="card" id="fullPlayerList"></div>
     </div>
 
+    <!-- LAVAGNA -->
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Schemi</div>
@@ -76,10 +81,8 @@
                 <button class="btn-t" onclick="clearArrows()">🗑️ Pulisci</button>
             </div>
             
-            <div class="tactics-layout">
-                <!-- Panchina per pallini non usati -->
+            <div class="tactics-layout" id="tacticsLayout">
                 <div class="bench" id="playerBench">
-                    <!-- Pallini Ruoli aggiuntivi -->
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
@@ -91,7 +94,6 @@
 
                 <div class="court-container" id="courtFrame">
                     <canvas id="tacticsCanvas" width="300" height="500"></canvas>
-                    <!-- Sestetto Base Numerato -->
                     <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
                     <div class="player-circle" style="top:55px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
                     <div class="player-circle" style="top:150px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
@@ -130,7 +132,6 @@
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, currentTool = 'move', statsChart = null;
 
-// Sincronizzazione Google Sheets
 async function syncToCloud() {
     document.getElementById('syncIndicator').innerText = "Sincronizzazione...";
     try {
@@ -145,7 +146,7 @@ async function loadFromCloud() {
         const data = await res.json();
         if(data) { players = data.players || []; trainings = data.trainings || []; }
         renderCalendar(); updateStats(); renderFullList();
-    } catch(e) { console.log("Errore caricamento"); }
+    } catch(e) { console.log("Errore"); }
 }
 
 function showPage(page) {
@@ -155,11 +156,10 @@ function showPage(page) {
     if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
 }
 
-// Appello Rapido
 function setAllPresent() {
     const t = trainings.find(x => x.id == currentTid);
     players.forEach(p => { t.attendance[p.name] = "presente"; });
-    openAtt(currentTid); // Ricarica la lista modale
+    openAtt(currentTid);
     syncToCloud();
 }
 
@@ -219,7 +219,7 @@ function updateStats() {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// Lavagna Tattica
+// LAVAGNA TATTICA
 const canvas = document.getElementById('tacticsCanvas');
 const ctx = canvas.getContext('2d');
 let drawing = false, startX, startY;
@@ -251,13 +251,13 @@ function sDraw(e) {
     if(currentTool !== 'draw') return;
     drawing = true;
     const r = canvas.getBoundingClientRect();
-    startX = e.clientX - r.left; startY = e.clientY - r.top;
+    startX = (e.clientX || e.pageX) - r.left; startY = (e.clientY || e.pageY) - r.top;
 }
 
 function eDraw(e) {
     if(!drawing) return;
     const r = canvas.getBoundingClientRect();
-    drawArrow(startX, startY, e.clientX - r.left, e.clientY - r.top);
+    drawArrow(startX, startY, (e.clientX || e.pageX) - r.left, (e.clientY || e.pageY) - r.top);
     drawing = false;
 }
 
@@ -279,13 +279,15 @@ function dragPlayer(el) {
         let x = e.clientX || e.touches[0].clientX;
         let y = e.clientY || e.touches[0].clientY;
         
-        // Se il pallino è nella panchina, lo "stacchiamo" rendendolo assoluto
+        // FIX: Spostiamo il pallino dentro il layout della lavagna, non nel body
+        // Così scompare quando nascondiamo la sezione "tactics"
         if(el.parentElement.classList.contains('bench')) {
             const rect = el.getBoundingClientRect();
+            const parentRect = document.getElementById('tacticsLayout').getBoundingClientRect();
             el.style.position = 'absolute';
-            el.style.top = rect.top + 'px';
-            el.style.left = rect.left + 'px';
-            document.body.appendChild(el);
+            el.style.top = (rect.top - parentRect.top) + 'px';
+            el.style.left = (rect.left - parentRect.left) + 'px';
+            document.getElementById('tacticsLayout').appendChild(el);
         }
 
         document.onmousemove = document.ontouchmove = (ev) => {
