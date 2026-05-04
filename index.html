@@ -16,23 +16,27 @@
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
         .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 2000; }
         .nav button { background:none; border:none; font-size:24px; cursor: pointer; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; }
-        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f1f5f9; }
         
-        /* Lavagna Tattica Aggiornata */
-        .court-container { position: relative; width: 300px; height: 500px; margin: 10px auto; touch-action: none; background: #3b82f6; border: 5px solid white; border-radius: 4px; }
+        /* Lavagna Tattica con Panchina */
+        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; }
+        .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; }
+        .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; overflow: hidden; }
         #tacticsCanvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
-        .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
-        
+        .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; }
+        .bench .player-circle { position: relative; top: auto !important; left: auto !important; }
+
         .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
         .btn-t { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: bold; }
         .btn-t.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+        
+        .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn-all { background: #10b981; margin-bottom: 15px; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 3000; }
         .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 15px; max-height: 80vh; overflow-y: auto; }
         .sync-status { font-size: 0.7rem; color: #10b981; text-align: center; margin-top: 5px; }
         .hidden { display: none; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -48,19 +52,17 @@
     </div>
 
     <div id="team" class="hidden">
-        <div class="card" id="playerFormCard">
-            <h3>Gestione Atleta</h3>
-            <input type="hidden" id="editPlayerId">
+        <div class="card">
+            <h3>Nuova Atleta</h3>
             <input id="pName" placeholder="Nome completo">
             <select id="pRole">
-                <option value="Palleggiatore">Palleggiatore</option>
-                <option value="Schiacciatore">Schiacciatore</option>
-                <option value="Centrale">Centrale</option>
-                <option value="Opposto">Opposto</option>
-                <option value="Libero">Libero</option>
+                <option value="P">Palleggiatore</option>
+                <option value="S">Schiacciatore</option>
+                <option value="C">Centrale</option>
+                <option value="O">Opposto</option>
+                <option value="L">Libero</option>
             </select>
-            <input type="date" id="pBirth">
-            <button class="btn-main" onclick="savePlayer()">Salva Giocatrice</button>
+            <button class="btn-main" onclick="savePlayer()">Aggiungi</button>
         </div>
         <div class="card" id="fullPlayerList"></div>
     </div>
@@ -73,15 +75,30 @@
                 <button id="btnDraw" class="btn-t" onclick="setTool('draw')">🏹 Frecce</button>
                 <button class="btn-t" onclick="clearArrows()">🗑️ Pulisci</button>
             </div>
-            <div class="court-container" id="courtFrame">
-                <canvas id="tacticsCanvas" width="300" height="500"></canvas>
-                <!-- Posizioni Iniziali Standard -->
-                <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
-                <div class="player-circle" style="top:55px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
-                <div class="player-circle" style="top:150px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
-                <div class="player-circle" style="top:150px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">2</div>
-                <div class="player-circle" style="top:410px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">5</div>
-                <div class="player-circle" style="top:410px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">1</div>
+            
+            <div class="tactics-layout">
+                <!-- Panchina per pallini non usati -->
+                <div class="bench" id="playerBench">
+                    <!-- Pallini Ruoli aggiuntivi -->
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">O</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
+                </div>
+
+                <div class="court-container" id="courtFrame">
+                    <canvas id="tacticsCanvas" width="300" height="500"></canvas>
+                    <!-- Sestetto Base Numerato -->
+                    <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
+                    <div class="player-circle" style="top:55px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
+                    <div class="player-circle" style="top:150px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
+                    <div class="player-circle" style="top:150px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">2</div>
+                    <div class="player-circle" style="top:410px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">5</div>
+                    <div class="player-circle" style="top:410px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">1</div>
+                </div>
             </div>
         </div>
     </div>
@@ -93,14 +110,18 @@
         <h3>Nuovo Allenamento</h3>
         <p id="selDateText"></p>
         <input type="time" id="startTime" value="18:30">
-        <input type="text" id="location" placeholder="Luogo...">
-        <button class="btn-main" onclick="saveTraining()">Salva</button>
-        <button onclick="closeModal('trainingModal')">Chiudi</button>
+        <button class="btn-main" onclick="saveTraining()">Crea Allenamento</button>
+        <button onclick="closeModal('trainingModal')" style="width:100%; background:none; border:none; margin-top:10px;">Chiudi</button>
     </div>
 </div>
 
 <div id="attModal" class="modal">
-    <div class="modal-content"><h3>Appello</h3><div id="attPlayersList"></div><button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button></div>
+    <div class="modal-content">
+        <h3>Appello</h3>
+        <button class="btn-main btn-all" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
+        <div id="attPlayersList"></div>
+        <button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button>
+    </div>
 </div>
 
 <div class="nav"><button onclick="showPage('home')">🏠</button><button onclick="showPage('team')">👥</button><button onclick="showPage('tactics')">🏐</button></div>
@@ -109,7 +130,7 @@
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, currentTool = 'move', statsChart = null;
 
-// --- CLOUD SYNC ---
+// Sincronizzazione Google Sheets
 async function syncToCloud() {
     document.getElementById('syncIndicator').innerText = "Sincronizzazione...";
     try {
@@ -124,7 +145,7 @@ async function loadFromCloud() {
         const data = await res.json();
         if(data) { players = data.players || []; trainings = data.trainings || []; }
         renderCalendar(); updateStats(); renderFullList();
-    } catch(e) { console.log("Caricamento fallito"); }
+    } catch(e) { console.log("Errore caricamento"); }
 }
 
 function showPage(page) {
@@ -134,15 +155,22 @@ function showPage(page) {
     if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
 }
 
-// --- CALENDARIO E SQUADRA ---
+// Appello Rapido
+function setAllPresent() {
+    const t = trainings.find(x => x.id == currentTid);
+    players.forEach(p => { t.attendance[p.name] = "presente"; });
+    openAtt(currentTid); // Ricarica la lista modale
+    syncToCloud();
+}
+
 function savePlayer() {
     const name = document.getElementById("pName").value;
     if(!name) return;
-    players.push({ id: Date.now(), name, role: document.getElementById("pRole").value, birth: document.getElementById("pBirth").value });
+    players.push({ id: Date.now(), name, role: document.getElementById("pRole").value, attendance: {} });
     document.getElementById("pName").value = ""; renderFullList(); syncToCloud();
 }
 
-function renderFullList() { document.getElementById("fullPlayerList").innerHTML = players.map(p => `<div class="player-row"><span>${p.name}</span><button onclick="deletePlayer(${p.id})">🗑️</button></div>`).join(""); }
+function renderFullList() { document.getElementById("fullPlayerList").innerHTML = players.map(p => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><span>${p.name} (${p.role})</span><button onclick="deletePlayer(${p.id})">🗑️</button></div>`).join(""); }
 function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
 
 function renderCalendar() {
@@ -155,7 +183,7 @@ function renderCalendar() {
 }
 
 function saveTraining() {
-    trainings.push({ id: "T"+Date.now(), date: selectedDate, startTime: document.getElementById('startTime').value, location: document.getElementById('location').value, attendance: {} });
+    trainings.push({ id: "T"+Date.now(), date: selectedDate, startTime: document.getElementById('startTime').value, attendance: {} });
     closeModal('trainingModal'); renderCalendar(); syncToCloud();
 }
 
@@ -163,13 +191,11 @@ function openAtt(tid) {
     currentTid = tid; const t = trainings.find(x => x.id == tid);
     document.getElementById('attPlayersList').innerHTML = players.map(p => {
         const s = t.attendance[p.name] || "presente";
-        return `<div class="att-row" style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${p.name}</span>
+        return `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${p.name}</span>
         <select onchange="updateAtt('${p.name}', this.value)" style="width:auto;">
-            <option value="presente" ${s==='presente'?'selected':''}>✅ Pres.</option>
-            <option value="assente" ${s==='assente'?'selected':''}>❌ Ass.</option>
-            <option value="gita" ${s==='gita'?'selected':''}>🎒 Gita</option>
-            <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕 Inf.</option>
-            <option value="malattia" ${s==='malattia'?'selected':''}>🤒 Mal.</option>
+            <option value="presente" ${s==='presente'?'selected':''}>✅</option>
+            <option value="assente" ${s==='assente'?'selected':''}>❌</option>
+            <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕</option>
         </select></div>`;
     }).join("");
     document.getElementById('attModal').style.display='block';
@@ -193,32 +219,19 @@ function updateStats() {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// --- LAVAGNA TATTICA AVANZATA ---
+// Lavagna Tattica
 const canvas = document.getElementById('tacticsCanvas');
 const ctx = canvas.getContext('2d');
 let drawing = false, startX, startY;
 
 function drawVolleyCourt() {
     ctx.clearRect(0, 0, 300, 500);
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 3;
-    
-    // Linee perimetrali (già fatte dal CSS border, ma le rinforziamo)
+    ctx.strokeStyle = "white"; ctx.lineWidth = 3;
     ctx.strokeRect(0, 0, 300, 500);
-    
-    // Linea di metà campo (Rete)
-    ctx.beginPath();
-    ctx.moveTo(0, 250); ctx.lineTo(300, 250);
-    ctx.stroke();
-
-    // Linee d'attacco (3 metri)
-    // In un campo lungo 18m (500px), 3m sono circa 83px dalla rete
-    ctx.setLineDash([5, 5]); // Tratteggiata
-    ctx.beginPath();
-    ctx.moveTo(0, 167); ctx.lineTo(300, 167); // Attacco superiore
-    ctx.moveTo(0, 333); ctx.lineTo(300, 333); // Attacco inferiore
-    ctx.stroke();
-    ctx.setLineDash([]); // Torna continua
+    ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(300, 250); ctx.stroke();
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(0, 167); ctx.lineTo(300, 167); ctx.moveTo(0, 333); ctx.lineTo(300, 333); ctx.stroke();
+    ctx.setLineDash([]);
 }
 
 function setTool(t) {
@@ -227,11 +240,8 @@ function setTool(t) {
     document.getElementById('btnDraw').classList.toggle('active', t==='draw');
 }
 
-function clearArrows() {
-    drawVolleyCourt();
-}
+function clearArrows() { drawVolleyCourt(); }
 
-// Gestione Frecce
 canvas.addEventListener('mousedown', sDraw);
 canvas.addEventListener('mouseup', eDraw);
 canvas.addEventListener('touchstart', (e) => sDraw(e.touches[0]));
@@ -247,23 +257,15 @@ function sDraw(e) {
 function eDraw(e) {
     if(!drawing) return;
     const r = canvas.getBoundingClientRect();
-    const ex = e.clientX - r.left; const ey = e.clientY - r.top;
-    drawArrow(startX, startY, ex, ey);
+    drawArrow(startX, startY, e.clientX - r.left, e.clientY - r.top);
     drawing = false;
 }
 
 function drawArrow(fx, fy, tx, ty) {
-    const headlen = 12;
-    const angle = Math.atan2(ty - fy, tx - fx);
-    ctx.strokeStyle = "yellow";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(fx, fy);
-    ctx.lineTo(tx, ty);
-    ctx.stroke();
-    // Punta freccia
-    ctx.beginPath();
-    ctx.moveTo(tx, ty);
+    const headlen = 12; const angle = Math.atan2(ty - fy, tx - fx);
+    ctx.strokeStyle = "yellow"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx, ty);
     ctx.lineTo(tx - headlen * Math.cos(angle - Math.PI / 6), ty - headlen * Math.sin(angle - Math.PI / 6));
     ctx.moveTo(tx, ty);
     ctx.lineTo(tx - headlen * Math.cos(angle + Math.PI / 6), ty - headlen * Math.sin(angle + Math.PI / 6));
@@ -276,6 +278,16 @@ function dragPlayer(el) {
         e.preventDefault();
         let x = e.clientX || e.touches[0].clientX;
         let y = e.clientY || e.touches[0].clientY;
+        
+        // Se il pallino è nella panchina, lo "stacchiamo" rendendolo assoluto
+        if(el.parentElement.classList.contains('bench')) {
+            const rect = el.getBoundingClientRect();
+            el.style.position = 'absolute';
+            el.style.top = rect.top + 'px';
+            el.style.left = rect.left + 'px';
+            document.body.appendChild(el);
+        }
+
         document.onmousemove = document.ontouchmove = (ev) => {
             let nx = ev.clientX || ev.touches[0].clientX;
             let ny = ev.clientY || ev.touches[0].clientY;
