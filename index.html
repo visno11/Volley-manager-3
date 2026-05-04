@@ -15,7 +15,6 @@
         .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
         
-        /* FIX Calendario */
         #calendar { min-height: 400px; background: white; padding: 10px; border-radius: 8px; }
         
         .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 4000; }
@@ -41,24 +40,34 @@
         .sync-status { font-size: 0.7rem; color: #10b981; text-align: center; margin-top: 5px; }
         .hidden { display: none !important; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        
+        .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; }
+        .player-info { display:flex; flex-direction:column; gap:2px; }
+        .player-dob { font-size: 0.85rem; color: #64748b; }
+        .action-btns { display: flex; gap: 10px; }
+        .action-btns button { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <header>🏐 Volley Manager Cloud
-    <div id="syncIndicator" class="sync-status">Sincronizzazione...</div>
+    <div id="syncIndicator" class="sync-status">Caricamento...</div>
 </header>
 
 <div class="container">
+    <!-- HOME -->
     <div id="home">
         <div class="card"><div class="section-title"><span>📅</span> Calendario</div><div id="calendar"></div></div>
         <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
+    <!-- SQUADRA -->
     <div id="team" class="hidden">
         <div class="card">
-            <h3>Nuova Atleta</h3>
+            <h3 id="formTitle">Nuova Atleta</h3>
             <input id="pName" placeholder="Nome completo">
+            <label style="font-size: 0.8rem; color: #64748b; margin-left: 5px;">Data di Nascita:</label>
+            <input type="date" id="pDob">
             <select id="pRole">
                 <option value="P">Palleggiatore</option>
                 <option value="S">Schiacciatore</option>
@@ -66,11 +75,16 @@
                 <option value="O">Opposto</option>
                 <option value="L">Libero</option>
             </select>
-            <button class="btn-main" onclick="savePlayer()">Aggiungi</button>
+            <input type="hidden" id="editingId">
+            <button class="btn-main" id="btnSavePlayer" onclick="savePlayer()">Aggiungi Atleta</button>
         </div>
-        <div class="card" id="fullPlayerList"></div>
+        <div class="card">
+            <div class="section-title"><span>👥</span> Elenco Squadra</div>
+            <div id="fullPlayerList"></div>
+        </div>
     </div>
 
+    <!-- LAVAGNA -->
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Schemi</div>
@@ -105,8 +119,17 @@
     </div>
 </div>
 
+<!-- MODALI -->
 <div id="trainingModal" class="modal"><div class="modal-content"><h3>Nuovo Allenamento</h3><p id="selDateText"></p><input type="time" id="startTime" value="18:30"><button class="btn-main" onclick="saveTraining()">Crea</button><button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button></div></div>
-<div id="attModal" class="modal"><div class="modal-content"><h3>Appello</h3><button class="btn-main btn-all" onclick="setAllPresent()">✅ Segna Tutte Presenti</button><div id="attPlayersList"></div><button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button></div></div>
+
+<div id="attModal" class="modal">
+    <div class="modal-content">
+        <h3>Appello</h3>
+        <button class="btn-main btn-all" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
+        <div id="attPlayersList"></div>
+        <button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button>
+    </div>
+</div>
 
 <div class="nav"><button onclick="showPage('home')">🏠</button><button onclick="showPage('team')">👥</button><button onclick="showPage('tactics')">🏐</button></div>
 
@@ -119,7 +142,7 @@ async function syncToCloud() {
     try {
         await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) });
         document.getElementById('syncIndicator').innerText = "Dati Salvati";
-        renderCalendar(); // Aggiorna i numeri sul calendario dopo il salvataggio
+        if(!document.getElementById('home').classList.contains('hidden')) renderCalendar();
     } catch(e) { document.getElementById('syncIndicator').innerText = "Errore Cloud"; }
 }
 
@@ -129,8 +152,8 @@ async function loadFromCloud() {
         const data = await res.json();
         if(data) { players = data.players || []; trainings = data.trainings || []; }
         document.getElementById('syncIndicator').innerText = "Dati Caricati";
-        showPage('home');
-    } catch(e) { document.getElementById('syncIndicator').innerText = "Pronto (Offline)"; showPage('home'); }
+        renderFullList(); showPage('home');
+    } catch(e) { document.getElementById('syncIndicator').innerText = "Pronto"; showPage('home'); }
 }
 
 function showPage(page) {
@@ -140,27 +163,85 @@ function showPage(page) {
     if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
 }
 
-// LOGICA CALENDARIO CON CONTEGGIO
+// CALENDARIO
 function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (calendar) calendar.destroy();
-    
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth', locale: 'it', height: 'auto',
         events: trainings.map(t => {
-            // Conta le presenti
             const presenti = Object.values(t.attendance).filter(v => v === "presente").length;
-            return {
-                id: t.id,
-                title: `🏐 ${t.startTime} (${presenti}/${players.length})`,
-                start: t.date,
-                backgroundColor: presenti === players.length ? '#10b981' : '#1e3a8a'
-            };
+            return { id: t.id, title: `🏐 ${t.startTime} (${presenti}/${players.length})`, start: t.date, backgroundColor: '#1e3a8a' };
         }),
         dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = info.dateStr; document.getElementById('trainingModal').style.display='block'; },
         eventClick: (info) => openAtt(info.event.id)
     });
     calendar.render();
+}
+
+// SQUADRA (Nascita e Matita inclusi)
+function savePlayer() {
+    const name = document.getElementById("pName").value;
+    const dob = document.getElementById("pDob").value;
+    const role = document.getElementById("pRole").value;
+    const editingId = document.getElementById("editingId").value;
+    if(!name) return alert("Inserisci il nome!");
+    if(editingId) {
+        const index = players.findIndex(p => p.id == editingId);
+        players[index].name = name; players[index].dob = dob; players[index].role = role;
+    } else {
+        players.push({ id: Date.now(), name, dob, role, attendance: {} });
+    }
+    resetForm(); renderFullList(); syncToCloud();
+}
+
+function resetForm() {
+    document.getElementById("pName").value = ""; document.getElementById("pDob").value = "";
+    document.getElementById("pRole").value = "P"; document.getElementById("editingId").value = "";
+    document.getElementById("formTitle").innerText = "Nuova Atleta"; document.getElementById("btnSavePlayer").innerText = "Aggiungi Atleta";
+}
+
+function editPlayer(id) {
+    const p = players.find(x => x.id == id);
+    document.getElementById("pName").value = p.name; document.getElementById("pDob").value = p.dob || "";
+    document.getElementById("pRole").value = p.role; document.getElementById("editingId").value = p.id;
+    document.getElementById("formTitle").innerText = "Modifica Atleta"; document.getElementById("btnSavePlayer").innerText = "Salva Modifiche";
+    window.scrollTo(0,0);
+}
+
+function renderFullList() {
+    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
+        <div class="player-item">
+            <div class="player-info">
+                <strong>${p.name} (${p.role})</strong>
+                <span class="player-dob">${p.dob ? '🎂 ' + p.dob.split('-').reverse().join('/') : 'Data non inserita'}</span>
+            </div>
+            <div class="action-btns">
+                <button onclick="editPlayer(${p.id})">✏️</button>
+                <button onclick="deletePlayer(${p.id})">🗑️</button>
+            </div>
+        </div>`).join("");
+}
+
+function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
+
+// APPELLO (Menu esteso)
+function openAtt(tid) {
+    currentTid = tid; const t = trainings.find(x => x.id == tid);
+    document.getElementById('attPlayersList').innerHTML = players.map(p => {
+        const s = t.attendance[p.name] || "presente";
+        return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid #f1f5f9; padding-bottom:5px;">
+            <span>${p.name}</span>
+            <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px;">
+                <option value="presente" ${s==='presente'?'selected':''}>✅ Presente</option>
+                <option value="assente" ${s==='assente'?'selected':''}>❌ Assente</option>
+                <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕 Infortunio</option>
+                <option value="malattia" ${s==='malattia'?'selected':''}>🤒 Malattia</option>
+                <option value="gita" ${s==='gita'?'selected':''}>🚌 Gita</option>
+            </select>
+        </div>`;
+    }).join("");
+    document.getElementById('attModal').style.display='block';
 }
 
 function setAllPresent() {
@@ -169,39 +250,16 @@ function setAllPresent() {
     openAtt(currentTid); syncToCloud();
 }
 
-function saveTraining() {
-    trainings.push({ id: "T"+Date.now(), date: selectedDate, startTime: document.getElementById('startTime').value, attendance: {} });
-    closeModal('trainingModal'); syncToCloud();
-}
-
-function openAtt(tid) {
-    currentTid = tid; const t = trainings.find(x => x.id == tid);
-    document.getElementById('attPlayersList').innerHTML = players.map(p => {
-        const s = t.attendance[p.name] || "presente";
-        return `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${p.name}</span>
-        <select onchange="updateAtt('${p.name}', this.value)" style="width:auto;">
-            <option value="presente" ${s==='presente'?'selected':''}>✅</option>
-            <option value="assente" ${s==='assente'?'selected':''}>❌</option>
-            <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕</option>
-        </select></div>`;
-    }).join("");
-    document.getElementById('attModal').style.display='block';
-}
-
 function updateAtt(pname, status) {
     const t = trainings.find(x => x.id == currentTid);
     t.attendance[pname] = status; syncToCloud();
 }
 
-// RESTO DELLE FUNZIONI (SQUADRA & TATTICA)
-function savePlayer() {
-    const name = document.getElementById("pName").value;
-    if(!name) return;
-    players.push({ id: Date.now(), name, role: document.getElementById("pRole").value, attendance: {} });
-    document.getElementById("pName").value = ""; renderFullList(); syncToCloud();
+function saveTraining() {
+    trainings.push({ id: "T"+Date.now(), date: selectedDate, startTime: document.getElementById('startTime').value, attendance: {} });
+    closeModal('trainingModal'); syncToCloud();
 }
-function renderFullList() { document.getElementById("fullPlayerList").innerHTML = players.map(p => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><span>${p.name} (${p.role})</span><button onclick="deletePlayer(${p.id})">🗑️</button></div>`).join(""); }
-function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
+
 function updateStats() {
     const ctx = document.getElementById('statsChart').getContext('2d');
     const data = players.map(p => {
@@ -214,14 +272,10 @@ function updateStats() {
 }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// LAVAGNA
+// LAVAGNA TATTICA
 const canvas = document.getElementById('tacticsCanvas'); const ctx = canvas.getContext('2d');
 let drawing = false, startX, startY;
-function drawVolleyCourt() {
-    ctx.clearRect(0, 0, 300, 500); ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeRect(0, 0, 300, 500);
-    ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(300, 250); ctx.stroke(); ctx.setLineDash([5, 5]);
-    ctx.beginPath(); ctx.moveTo(0, 167); ctx.lineTo(300, 167); ctx.moveTo(0, 333); ctx.lineTo(300, 333); ctx.stroke(); ctx.setLineDash([]);
-}
+function drawVolleyCourt() { ctx.clearRect(0, 0, 300, 500); ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeRect(0, 0, 300, 500); ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(300, 250); ctx.stroke(); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(0, 167); ctx.lineTo(300, 167); ctx.moveTo(0, 333); ctx.lineTo(300, 333); ctx.stroke(); ctx.setLineDash([]); }
 function setTool(t) { currentTool = t; document.getElementById('btnMove').classList.toggle('active', t==='move'); document.getElementById('btnDraw').classList.toggle('active', t==='draw'); }
 function clearArrows() { drawVolleyCourt(); }
 canvas.addEventListener('mousedown', sDraw); canvas.addEventListener('mouseup', eDraw);
@@ -231,8 +285,7 @@ function eDraw(e) { if(!drawing) return; const r = canvas.getBoundingClientRect(
 function drawArrow(fx, fy, tx, ty) { const headlen = 12; const angle = Math.atan2(ty - fy, tx - fx); ctx.strokeStyle = "yellow"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke(); ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx - headlen * Math.cos(angle - Math.PI / 6), ty - headlen * Math.sin(angle - Math.PI / 6)); ctx.moveTo(tx, ty); ctx.lineTo(tx - headlen * Math.cos(angle + Math.PI / 6), ty - headlen * Math.sin(angle + Math.PI / 6)); ctx.stroke(); }
 function dragPlayer(el) {
     el.onmousedown = el.ontouchstart = (e) => {
-        if(currentTool !== 'move') return;
-        e.preventDefault();
+        if(currentTool !== 'move') return; e.preventDefault();
         let x = e.clientX || e.touches[0].clientX; let y = e.clientY || e.touches[0].clientY;
         if(el.parentElement.classList.contains('bench')) {
             const rect = el.getBoundingClientRect(); const parentRect = document.getElementById('tacticsLayout').getBoundingClientRect();
@@ -247,7 +300,6 @@ function dragPlayer(el) {
         document.onmouseup = document.ontouchend = () => { document.onmousemove = document.ontouchmove = null; };
     };
 }
-
 window.onload = loadFromCloud;
 </script>
 </body>
