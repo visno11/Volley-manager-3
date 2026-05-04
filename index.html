@@ -14,16 +14,18 @@
         .container { padding: 15px; max-width: 900px; margin: auto; }
         .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        
+        /* FIX Calendario */
+        #calendar { min-height: 400px; background: white; padding: 10px; border-radius: 8px; }
+        
         .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 4000; }
         .nav button { background:none; border:none; font-size:24px; cursor: pointer; }
         
-        /* Lavagna Tattica FIX */
+        /* Lavagna Tattica */
         .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; position: relative; min-height: 520px; }
         .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; z-index: 5; }
         .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; z-index: 10; }
         #tacticsCanvas { position: absolute; top: 0; left: 0; z-index: 11; cursor: crosshair; }
-        
-        /* Pallini FIX: z-index alto per non sparire mai */
         .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 100; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; touch-action: none; }
         .bench .player-circle { position: relative; top: auto !important; left: auto !important; }
 
@@ -44,17 +46,15 @@
 <body>
 
 <header>🏐 Volley Manager Cloud
-    <div id="syncIndicator" class="sync-status">Dati Sincronizzati</div>
+    <div id="syncIndicator" class="sync-status">Sincronizzazione...</div>
 </header>
 
 <div class="container">
-    <!-- HOME -->
     <div id="home">
         <div class="card"><div class="section-title"><span>📅</span> Calendario</div><div id="calendar"></div></div>
         <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
-    <!-- SQUADRA -->
     <div id="team" class="hidden">
         <div class="card">
             <h3>Nuova Atleta</h3>
@@ -71,7 +71,6 @@
         <div class="card" id="fullPlayerList"></div>
     </div>
 
-    <!-- LAVAGNA -->
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Schemi</div>
@@ -82,7 +81,7 @@
             </div>
             
             <div class="tactics-layout" id="tacticsLayout">
-                <div class="bench" id="playerBench">
+                <div class="bench">
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
@@ -92,7 +91,7 @@
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
                 </div>
 
-                <div class="court-container" id="courtFrame">
+                <div class="court-container">
                     <canvas id="tacticsCanvas" width="300" height="500"></canvas>
                     <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
                     <div class="player-circle" style="top:55px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
@@ -106,38 +105,22 @@
     </div>
 </div>
 
-<!-- MODALI -->
-<div id="trainingModal" class="modal">
-    <div class="modal-content">
-        <h3>Nuovo Allenamento</h3>
-        <p id="selDateText"></p>
-        <input type="time" id="startTime" value="18:30">
-        <button class="btn-main" onclick="saveTraining()">Crea Allenamento</button>
-        <button onclick="closeModal('trainingModal')" style="width:100%; background:none; border:none; margin-top:10px;">Chiudi</button>
-    </div>
-</div>
-
-<div id="attModal" class="modal">
-    <div class="modal-content">
-        <h3>Appello</h3>
-        <button class="btn-main btn-all" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
-        <div id="attPlayersList"></div>
-        <button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button>
-    </div>
-</div>
+<div id="trainingModal" class="modal"><div class="modal-content"><h3>Nuovo Allenamento</h3><p id="selDateText"></p><input type="time" id="startTime" value="18:30"><button class="btn-main" onclick="saveTraining()">Crea</button><button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button></div></div>
+<div id="attModal" class="modal"><div class="modal-content"><h3>Appello</h3><button class="btn-main btn-all" onclick="setAllPresent()">✅ Segna Tutte Presenti</button><div id="attPlayersList"></div><button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button></div></div>
 
 <div class="nav"><button onclick="showPage('home')">🏠</button><button onclick="showPage('team')">👥</button><button onclick="showPage('tactics')">🏐</button></div>
 
 <script>
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
-let players = [], trainings = [], selectedDate = "", currentTid = null, currentTool = 'move', statsChart = null;
+let players = [], trainings = [], selectedDate = "", currentTid = null, currentTool = 'move', statsChart = null, calendar = null;
 
 async function syncToCloud() {
     document.getElementById('syncIndicator').innerText = "Sincronizzazione...";
     try {
         await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) });
-        document.getElementById('syncIndicator').innerText = "Dati Salvati nel Cloud";
-    } catch(e) { document.getElementById('syncIndicator').innerText = "Errore Sincronizzazione"; }
+        document.getElementById('syncIndicator').innerText = "Dati Salvati";
+        renderCalendar(); // Aggiorna i numeri sul calendario dopo il salvataggio
+    } catch(e) { document.getElementById('syncIndicator').innerText = "Errore Cloud"; }
 }
 
 async function loadFromCloud() {
@@ -145,8 +128,9 @@ async function loadFromCloud() {
         const res = await fetch(CLOUD_URL);
         const data = await res.json();
         if(data) { players = data.players || []; trainings = data.trainings || []; }
-        renderCalendar(); updateStats(); renderFullList();
-    } catch(e) { console.log("Errore"); }
+        document.getElementById('syncIndicator').innerText = "Dati Caricati";
+        showPage('home');
+    } catch(e) { document.getElementById('syncIndicator').innerText = "Pronto (Offline)"; showPage('home'); }
 }
 
 function showPage(page) {
@@ -156,35 +140,38 @@ function showPage(page) {
     if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
 }
 
+// LOGICA CALENDARIO CON CONTEGGIO
+function renderCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (calendar) calendar.destroy();
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth', locale: 'it', height: 'auto',
+        events: trainings.map(t => {
+            // Conta le presenti
+            const presenti = Object.values(t.attendance).filter(v => v === "presente").length;
+            return {
+                id: t.id,
+                title: `🏐 ${t.startTime} (${presenti}/${players.length})`,
+                start: t.date,
+                backgroundColor: presenti === players.length ? '#10b981' : '#1e3a8a'
+            };
+        }),
+        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = info.dateStr; document.getElementById('trainingModal').style.display='block'; },
+        eventClick: (info) => openAtt(info.event.id)
+    });
+    calendar.render();
+}
+
 function setAllPresent() {
     const t = trainings.find(x => x.id == currentTid);
     players.forEach(p => { t.attendance[p.name] = "presente"; });
-    openAtt(currentTid);
-    syncToCloud();
-}
-
-function savePlayer() {
-    const name = document.getElementById("pName").value;
-    if(!name) return;
-    players.push({ id: Date.now(), name, role: document.getElementById("pRole").value, attendance: {} });
-    document.getElementById("pName").value = ""; renderFullList(); syncToCloud();
-}
-
-function renderFullList() { document.getElementById("fullPlayerList").innerHTML = players.map(p => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><span>${p.name} (${p.role})</span><button onclick="deletePlayer(${p.id})">🗑️</button></div>`).join(""); }
-function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
-
-function renderCalendar() {
-    new FullCalendar.Calendar(document.getElementById('calendar'), {
-        initialView: 'dayGridMonth', locale: 'it',
-        events: trainings.map(t => ({ id: t.id, title: `🏐 ${t.startTime}`, start: t.date })),
-        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = info.dateStr; document.getElementById('trainingModal').style.display='block'; },
-        eventClick: (info) => openAtt(info.event.id)
-    }).render();
+    openAtt(currentTid); syncToCloud();
 }
 
 function saveTraining() {
     trainings.push({ id: "T"+Date.now(), date: selectedDate, startTime: document.getElementById('startTime').value, attendance: {} });
-    closeModal('trainingModal'); renderCalendar(); syncToCloud();
+    closeModal('trainingModal'); syncToCloud();
 }
 
 function openAtt(tid) {
@@ -206,6 +193,15 @@ function updateAtt(pname, status) {
     t.attendance[pname] = status; syncToCloud();
 }
 
+// RESTO DELLE FUNZIONI (SQUADRA & TATTICA)
+function savePlayer() {
+    const name = document.getElementById("pName").value;
+    if(!name) return;
+    players.push({ id: Date.now(), name, role: document.getElementById("pRole").value, attendance: {} });
+    document.getElementById("pName").value = ""; renderFullList(); syncToCloud();
+}
+function renderFullList() { document.getElementById("fullPlayerList").innerHTML = players.map(p => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><span>${p.name} (${p.role})</span><button onclick="deletePlayer(${p.id})">🗑️</button></div>`).join(""); }
+function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
 function updateStats() {
     const ctx = document.getElementById('statsChart').getContext('2d');
     const data = players.map(p => {
@@ -216,85 +212,36 @@ function updateStats() {
     if(statsChart) statsChart.destroy();
     statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
 }
-
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// LAVAGNA TATTICA
-const canvas = document.getElementById('tacticsCanvas');
-const ctx = canvas.getContext('2d');
+// LAVAGNA
+const canvas = document.getElementById('tacticsCanvas'); const ctx = canvas.getContext('2d');
 let drawing = false, startX, startY;
-
 function drawVolleyCourt() {
-    ctx.clearRect(0, 0, 300, 500);
-    ctx.strokeStyle = "white"; ctx.lineWidth = 3;
-    ctx.strokeRect(0, 0, 300, 500);
-    ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(300, 250); ctx.stroke();
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath(); ctx.moveTo(0, 167); ctx.lineTo(300, 167); ctx.moveTo(0, 333); ctx.lineTo(300, 333); ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.clearRect(0, 0, 300, 500); ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeRect(0, 0, 300, 500);
+    ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(300, 250); ctx.stroke(); ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(0, 167); ctx.lineTo(300, 167); ctx.moveTo(0, 333); ctx.lineTo(300, 333); ctx.stroke(); ctx.setLineDash([]);
 }
-
-function setTool(t) {
-    currentTool = t;
-    document.getElementById('btnMove').classList.toggle('active', t==='move');
-    document.getElementById('btnDraw').classList.toggle('active', t==='draw');
-}
-
+function setTool(t) { currentTool = t; document.getElementById('btnMove').classList.toggle('active', t==='move'); document.getElementById('btnDraw').classList.toggle('active', t==='draw'); }
 function clearArrows() { drawVolleyCourt(); }
-
-canvas.addEventListener('mousedown', sDraw);
-canvas.addEventListener('mouseup', eDraw);
-canvas.addEventListener('touchstart', (e) => sDraw(e.touches[0]));
-canvas.addEventListener('touchend', (e) => eDraw(e.changedTouches[0]));
-
-function sDraw(e) {
-    if(currentTool !== 'draw') return;
-    drawing = true;
-    const r = canvas.getBoundingClientRect();
-    startX = (e.clientX || e.pageX) - r.left; startY = (e.clientY || e.pageY) - r.top;
-}
-
-function eDraw(e) {
-    if(!drawing) return;
-    const r = canvas.getBoundingClientRect();
-    drawArrow(startX, startY, (e.clientX || e.pageX) - r.left, (e.clientY || e.pageY) - r.top);
-    drawing = false;
-}
-
-function drawArrow(fx, fy, tx, ty) {
-    const headlen = 12; const angle = Math.atan2(ty - fy, tx - fx);
-    ctx.strokeStyle = "yellow"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - headlen * Math.cos(angle - Math.PI / 6), ty - headlen * Math.sin(angle - Math.PI / 6));
-    ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - headlen * Math.cos(angle + Math.PI / 6), ty - headlen * Math.sin(angle + Math.PI / 6));
-    ctx.stroke();
-}
-
+canvas.addEventListener('mousedown', sDraw); canvas.addEventListener('mouseup', eDraw);
+canvas.addEventListener('touchstart', (e) => sDraw(e.touches[0])); canvas.addEventListener('touchend', (e) => eDraw(e.changedTouches[0]));
+function sDraw(e) { if(currentTool !== 'draw') return; drawing = true; const r = canvas.getBoundingClientRect(); startX = (e.clientX || e.pageX) - r.left; startY = (e.clientY || e.pageY) - r.top; }
+function eDraw(e) { if(!drawing) return; const r = canvas.getBoundingClientRect(); drawArrow(startX, startY, (e.clientX || e.pageX) - r.left, (e.clientY || e.pageY) - r.top); drawing = false; }
+function drawArrow(fx, fy, tx, ty) { const headlen = 12; const angle = Math.atan2(ty - fy, tx - fx); ctx.strokeStyle = "yellow"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke(); ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx - headlen * Math.cos(angle - Math.PI / 6), ty - headlen * Math.sin(angle - Math.PI / 6)); ctx.moveTo(tx, ty); ctx.lineTo(tx - headlen * Math.cos(angle + Math.PI / 6), ty - headlen * Math.sin(angle + Math.PI / 6)); ctx.stroke(); }
 function dragPlayer(el) {
     el.onmousedown = el.ontouchstart = (e) => {
         if(currentTool !== 'move') return;
         e.preventDefault();
-        let x = e.clientX || e.touches[0].clientX;
-        let y = e.clientY || e.touches[0].clientY;
-        
-        // FIX: Spostiamo il pallino dentro il layout della lavagna, non nel body
-        // Così scompare quando nascondiamo la sezione "tactics"
+        let x = e.clientX || e.touches[0].clientX; let y = e.clientY || e.touches[0].clientY;
         if(el.parentElement.classList.contains('bench')) {
-            const rect = el.getBoundingClientRect();
-            const parentRect = document.getElementById('tacticsLayout').getBoundingClientRect();
-            el.style.position = 'absolute';
-            el.style.top = (rect.top - parentRect.top) + 'px';
-            el.style.left = (rect.left - parentRect.left) + 'px';
+            const rect = el.getBoundingClientRect(); const parentRect = document.getElementById('tacticsLayout').getBoundingClientRect();
+            el.style.position = 'absolute'; el.style.top = (rect.top - parentRect.top) + 'px'; el.style.left = (rect.left - parentRect.left) + 'px';
             document.getElementById('tacticsLayout').appendChild(el);
         }
-
         document.onmousemove = document.ontouchmove = (ev) => {
-            let nx = ev.clientX || ev.touches[0].clientX;
-            let ny = ev.clientY || ev.touches[0].clientY;
-            el.style.left = (el.offsetLeft + (nx - x)) + "px";
-            el.style.top = (el.offsetTop + (ny - y)) + "px";
+            let nx = ev.clientX || ev.touches[0].clientX; let ny = ev.clientY || ev.touches[0].clientY;
+            el.style.left = (el.offsetLeft + (nx - x)) + "px"; el.style.top = (el.offsetTop + (ny - y)) + "px";
             x = nx; y = ny;
         };
         document.onmouseup = document.ontouchend = () => { document.onmousemove = document.ontouchmove = null; };
