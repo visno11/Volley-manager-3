@@ -8,11 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
     <style>
-        :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --edit: #10b981; --danger: #ef4444; }
+        :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --danger: #ef4444; }
         body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; }
         header { background: var(--primary); color: white; padding: 1rem; text-align: center; font-weight: bold; border-bottom: 4px solid var(--secondary); }
         .container { padding: 15px; max-width: 900px; margin: auto; }
-        .card { background: var(--white); padding: 20px; border-radius: 166px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
         
         #calendar { min-height: 400px; background: white; padding: 10px; border-radius: 8px; }
@@ -22,7 +22,6 @@
         .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-danger { background: var(--danger) !important; margin-top: 5px; }
         .btn-warning { background: var(--secondary) !important; color: white; margin-top: 5px; }
-        .btn-edit-small { background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 5000; }
         .modal-content { background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 15px; max-height: 85vh; overflow-y: auto; }
@@ -30,7 +29,6 @@
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         
         .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; }
-        .action-btns button { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -39,8 +37,8 @@
 
 <div class="container">
     <div id="home">
-        <div class="card"><div class="section-title"><span>📅</span> Calendario Allenamenti</div><div id="calendar"></div></div>
-        <div class="card"><div class="section-title"><span>📊</span> % Presenze (Solo "Presente")</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
+        <div class="card"><div class="section-title"><span>📅</span> Calendario</div><div id="calendar"></div></div>
+        <div class="card"><div class="section-title"><span>📊</span> % Presenze</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
     <div id="team" class="hidden">
@@ -68,32 +66,27 @@
             <div style="flex:1;"><label>Fine:</label><input type="time" id="endTime" value="20:30"></div>
         </div>
         <div style="margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <label><strong>Ripetizione Settimanale:</strong></label>
+            <label><strong>Ripeti ogni 7 giorni per:</strong></label>
             <input type="number" id="repeatWeeks" value="1" min="1" max="52">
-            <p style="font-size: 0.75rem; color: #64748b;">Crea un allenamento ogni 7 giorni per X settimane.</p>
+            <p style="font-size: 0.75rem; color: #64748b;">Esempio: 4 crea l'allenamento per un mese intero.</p>
         </div>
-        <button class="btn-main" onclick="saveTraining()">Conferma e Crea</button>
+        <button class="btn-main" onclick="saveTraining()">Crea Allenamenti</button>
         <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button>
     </div>
 </div>
 
-<!-- MODALE APPELLO E GESTIONE ELIMINAZIONE -->
+<!-- MODALE APPELLO -->
 <div id="attModal" class="modal">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 id="attTitle">Dettagli</h3>
-            <button class="btn-edit-small" onclick="editTrainingTime()">Modifica Orari</button>
-        </div>
+        <h3 id="attTitle">Dettagli</h3>
         <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
         <div id="attPlayersList"></div>
         <hr>
-        <div style="background: #fff1f2; padding: 10px; border-radius: 8px;">
-            <p style="font-weight: bold; margin-bottom: 5px; color: #991b1b; font-size: 0.9rem;">Gestione Eliminazioni:</p>
-            <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Solo Questo</button>
+        <div style="background: #fff1f2; padding: 12px; border-radius: 8px;">
+            <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Solo Oggi</button>
             <button class="btn-main btn-warning" onclick="deleteSeries()">📅 Elimina Serie Settimanale</button>
-            <p style="font-size: 0.7rem; color: #991b1b; margin-top: 5px;">"Elimina Serie" rimuove l'allenamento di oggi e quelli dei successivi martedì, mercoledì, ecc.</p>
         </div>
-        <button class="btn-main" onclick="closeModal('attModal')" style="background: #64748b;">Chiudi</button>
+        <button class="btn-main" onclick="closeModal('attModal')" style="background: #64748b;">Esci</button>
     </div>
 </div>
 
@@ -103,8 +96,16 @@
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
 
+// Utility per formattare la data correttamente senza errori di fuso orario
+function formatDate(date) {
+    let d = new Date(date), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+    return [year, month, day].join('-');
+}
+
 async function syncToCloud() {
-    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); updateStats(); } catch(e) { console.error("Errore sync"); }
+    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); updateStats(); } catch(e) { console.error("Errore Cloud"); }
 }
 
 async function loadFromCloud() {
@@ -126,48 +127,44 @@ function renderCalendar() {
     if (calendar) calendar.destroy();
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth', locale: 'it', height: 'auto',
-        events: trainings.map(t => {
-            const pres = Object.values(t.attendance || {}).filter(v => v === "presente").length;
-            return { id: t.id, title: `${t.startTime}-${t.endTime} (${pres}/${players.length})`, start: t.date };
-        }),
+        events: trainings.map(t => ({ id: t.id, title: `${t.startTime}-${t.endTime}`, start: t.date })),
         dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = "Data: " + info.dateStr; document.getElementById('trainingModal').style.display='block'; },
         eventClick: (info) => openAtt(info.event.id)
     });
     calendar.render();
 }
 
-// LOGICA CREAZIONE E RIPETIZIONE
 function saveTraining() {
     const start = document.getElementById('startTime').value, end = document.getElementById('endTime').value;
     const reps = parseInt(document.getElementById('repeatWeeks').value) || 1;
-    const parts = selectedDate.split('-');
+    
     for(let i=0; i<reps; i++) {
-        let d = new Date(parts[0], parts[1]-1, parts[2]);
+        let d = new Date(selectedDate);
         d.setDate(d.getDate() + (i * 7));
-        const dateStr = d.toISOString().split('T')[0];
-        trainings.push({ id: "T" + Date.now() + i, date: dateStr, startTime: start, endTime: end, attendance: {} });
+        trainings.push({ id: "T" + Date.now() + i, date: formatDate(d), startTime: start, endTime: end, attendance: {} });
     }
     closeModal('trainingModal'); syncToCloud();
 }
 
-// LOGICA ELIMINAZIONE SERIE (NOVITÀ)
+// --- FUNZIONE CORRETTA PER ELIMINAZIONE SERIE ---
 function deleteSeries() {
     const t = trainings.find(x => x.id == currentTid);
-    const numWeeks = prompt("Per quante settimane vuoi eliminare l'allenamento del " + t.date + " e i successivi?", "4");
+    if (!t) return;
+
+    const numWeeks = prompt("Quante settimane vuoi eliminare a partire da questa data?", "4");
     if(!numWeeks || isNaN(numWeeks)) return;
 
     const weeks = parseInt(numWeeks);
-    const parts = t.date.split('-');
     const datesToDelete = [];
 
+    // Generiamo l'elenco delle date esatte da rimuovere
     for(let i=0; i < weeks; i++) {
-        let d = new Date(parts[0], parts[1]-1, parts[2]);
+        let d = new Date(t.date);
         d.setDate(d.getDate() + (i * 7));
-        datesToDelete.push(d.toISOString().split('T')[0]);
+        datesToDelete.push(formatDate(d));
     }
 
-    if(confirm("Verranno eliminati gli allenamenti di questo giorno per le prossime " + weeks + " settimane. Procedere?")) {
-        // Filtriamo via tutti gli allenamenti che cadono in quelle date
+    if(confirm(`Verranno rimossi gli allenamenti trovati nelle date: ${datesToDelete.join(', ')}. Confermi?`)) {
         trainings = trainings.filter(item => !datesToDelete.includes(item.date));
         closeModal('attModal');
         syncToCloud();
@@ -175,15 +172,9 @@ function deleteSeries() {
 }
 
 function deleteTraining() {
-    if(confirm("Eliminare l'allenamento selezionato?")) { trainings = trainings.filter(t => t.id !== currentTid); closeModal('attModal'); syncToCloud(); }
+    if(confirm("Eliminare l'allenamento di oggi?")) { trainings = trainings.filter(t => t.id !== currentTid); closeModal('attModal'); syncToCloud(); }
 }
 
-function editTrainingTime() {
-    const s = prompt("Inizio:"), e = prompt("Fine:");
-    if(s && e) { const t = trainings.find(x => x.id == currentTid); t.startTime = s; t.endTime = e; syncToCloud(); openAtt(currentTid); }
-}
-
-// APPELLO E SQUADRA (Rimanenti funzioni invariate)
 function openAtt(tid) {
     currentTid = tid; const t = trainings.find(x => x.id == tid);
     document.getElementById('attTitle').innerText = `${t.date} (${t.startTime}-${t.endTime})`;
@@ -192,11 +183,11 @@ function openAtt(tid) {
         return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <span>${p.name}</span>
             <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px;">
-                <option value="presente" ${s==='presente'?'selected':''}>✅ Presente</option>
-                <option value="assente" ${s==='assente'?'selected':''}>❌ Assente</option>
-                <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕 Infortunio</option>
-                <option value="malattia" ${s==='malattia'?'selected':''}>🤒 Malattia</option>
-                <option value="gita" ${s==='gita'?'selected':''}>🚌 Gita</option>
+                <option value="presente" ${s==='presente'?'selected':''}>✅</option>
+                <option value="assente" ${s==='assente'?'selected':''}>❌</option>
+                <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕</option>
+                <option value="malattia" ${s==='malattia'?'selected':''}>🤒</option>
+                <option value="gita" ${s==='gita'?'selected':''}>🚌</option>
             </select></div>`;
     }).join("");
     document.getElementById('attModal').style.display='block';
@@ -213,23 +204,22 @@ function savePlayer() {
     resetForm(); renderFullList(); syncToCloud();
 }
 
+function renderFullList() {
+    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
+        <div class="player-item">
+            <div><strong>${p.name}</strong><br><small>${p.dob || '---'}</small></div>
+            <button onclick="editPlayer(${p.id})">✏️</button>
+        </div>`).join("");
+}
+
 function editPlayer(id) {
     const p = players.find(x => x.id == id);
     document.getElementById("pName").value = p.name; document.getElementById("pDob").value = p.dob || "";
     document.getElementById("pRole").value = p.role; document.getElementById("editingId").value = p.id;
-    document.getElementById("formTitle").innerText = "Modifica Atleta"; showPage('team');
+    showPage('team');
 }
 
-function renderFullList() {
-    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
-        <div class="player-item">
-            <div><strong>${p.name}</strong><br><small>🎂 ${p.dob || '---'}</small></div>
-            <div class="action-btns"><button onclick="editPlayer(${p.id})">✏️</button><button onclick="deletePlayer(${p.id})">🗑️</button></div>
-        </div>`).join("");
-}
-
-function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
-function resetForm() { document.getElementById("pName").value = ""; document.getElementById("pDob").value = ""; document.getElementById("editingId").value = ""; document.getElementById("formTitle").innerText = "Nuova Atleta"; }
+function resetForm() { document.getElementById("pName").value = ""; document.getElementById("pDob").value = ""; document.getElementById("editingId").value = ""; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function updateStats() {
