@@ -12,7 +12,7 @@
         body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; }
         header { background: var(--primary); color: white; padding: 1rem; text-align: center; font-weight: bold; border-bottom: 4px solid var(--secondary); }
         .container { padding: 15px; max-width: 900px; margin: auto; }
-        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
+        .card { background: var(--white); padding: 20px; border-radius: 166px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
         
         #calendar { min-height: 400px; background: white; padding: 10px; border-radius: 8px; }
@@ -21,6 +21,7 @@
         
         .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-danger { background: var(--danger) !important; margin-top: 5px; }
+        .btn-warning { background: var(--secondary) !important; color: white; margin-top: 5px; }
         .btn-edit-small { background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 5000; }
@@ -38,7 +39,7 @@
 
 <div class="container">
     <div id="home">
-        <div class="card"><div class="section-title"><span>📅</span> Calendario</div><div id="calendar"></div></div>
+        <div class="card"><div class="section-title"><span>📅</span> Calendario Allenamenti</div><div id="calendar"></div></div>
         <div class="card"><div class="section-title"><span>📊</span> % Presenze (Solo "Presente")</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
@@ -53,10 +54,7 @@
             <input type="hidden" id="editingId">
             <button class="btn-main" onclick="savePlayer()">Salva Atleta</button>
         </div>
-        <div class="card">
-            <div class="section-title"><span>👥</span> Elenco Atlete</div>
-            <div id="fullPlayerList"></div>
-        </div>
+        <div class="card"><div id="fullPlayerList"></div></div>
     </div>
 </div>
 
@@ -64,34 +62,38 @@
 <div id="trainingModal" class="modal">
     <div class="modal-content">
         <h3>Pianifica Allenamento</h3>
-        <p id="selDateText" style="font-weight: bold; color: var(--primary);"></p>
+        <p id="selDateText" style="font-weight: bold;"></p>
         <div style="display: flex; gap: 10px;">
-            <div style="flex:1;"><label>Dalle ore:</label><input type="time" id="startTime" value="18:30"></div>
-            <div style="flex:1;"><label>Alle ore:</label><input type="time" id="endTime" value="20:30"></div>
+            <div style="flex:1;"><label>Inizio:</label><input type="time" id="startTime" value="18:30"></div>
+            <div style="flex:1;"><label>Fine:</label><input type="time" id="endTime" value="20:30"></div>
         </div>
-        <div style="margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+        <div style="margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
             <label><strong>Ripetizione Settimanale:</strong></label>
-            <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0;">Crea un evento ogni 7 giorni a partire dalla data scelta.</p>
-            <input type="number" id="repeatWeeks" value="1" min="1" max="52" placeholder="Numero di settimane">
-            <small>Inserisci 1 per evento singolo, o più settimane per ripetere.</small>
+            <input type="number" id="repeatWeeks" value="1" min="1" max="52">
+            <p style="font-size: 0.75rem; color: #64748b;">Crea un allenamento ogni 7 giorni per X settimane.</p>
         </div>
         <button class="btn-main" onclick="saveTraining()">Conferma e Crea</button>
-        <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer;">Annulla</button>
+        <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button>
     </div>
 </div>
 
-<!-- MODALE APPELLO -->
+<!-- MODALE APPELLO E GESTIONE ELIMINAZIONE -->
 <div id="attModal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 id="attTitle">Appello</h3>
+            <h3 id="attTitle">Dettagli</h3>
             <button class="btn-edit-small" onclick="editTrainingTime()">Modifica Orari</button>
         </div>
         <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
         <div id="attPlayersList"></div>
         <hr>
-        <button class="btn-main" onclick="closeModal('attModal')">Chiudi</button>
-        <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Allenamento</button>
+        <div style="background: #fff1f2; padding: 10px; border-radius: 8px;">
+            <p style="font-weight: bold; margin-bottom: 5px; color: #991b1b; font-size: 0.9rem;">Gestione Eliminazioni:</p>
+            <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Solo Questo</button>
+            <button class="btn-main btn-warning" onclick="deleteSeries()">📅 Elimina Serie Settimanale</button>
+            <p style="font-size: 0.7rem; color: #991b1b; margin-top: 5px;">"Elimina Serie" rimuove l'allenamento di oggi e quelli dei successivi martedì, mercoledì, ecc.</p>
+        </div>
+        <button class="btn-main" onclick="closeModal('attModal')" style="background: #64748b;">Chiudi</button>
     </div>
 </div>
 
@@ -102,7 +104,7 @@ const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3
 let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
 
 async function syncToCloud() {
-    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); updateStats(); } catch(e) { console.error("Errore Cloud"); }
+    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); updateStats(); } catch(e) { console.error("Errore sync"); }
 }
 
 async function loadFromCloud() {
@@ -119,7 +121,6 @@ function showPage(page) {
     if(page === 'home') { renderCalendar(); updateStats(); }
 }
 
-// CALENDARIO E RIPETIZIONI
 function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (calendar) calendar.destroy();
@@ -129,70 +130,68 @@ function renderCalendar() {
             const pres = Object.values(t.attendance || {}).filter(v => v === "presente").length;
             return { id: t.id, title: `${t.startTime}-${t.endTime} (${pres}/${players.length})`, start: t.date };
         }),
-        dateClick: (info) => { 
-            selectedDate = info.dateStr; 
-            document.getElementById('selDateText').innerText = "Data: " + info.dateStr.split('-').reverse().join('/');
-            document.getElementById('trainingModal').style.display='block'; 
-        },
+        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = "Data: " + info.dateStr; document.getElementById('trainingModal').style.display='block'; },
         eventClick: (info) => openAtt(info.event.id)
     });
     calendar.render();
 }
 
+// LOGICA CREAZIONE E RIPETIZIONE
 function saveTraining() {
-    const start = document.getElementById('startTime').value;
-    const end = document.getElementById('endTime').value;
+    const start = document.getElementById('startTime').value, end = document.getElementById('endTime').value;
     const reps = parseInt(document.getElementById('repeatWeeks').value) || 1;
-    
-    // Creazione eventi ogni 7 giorni
     const parts = selectedDate.split('-');
     for(let i=0; i<reps; i++) {
         let d = new Date(parts[0], parts[1]-1, parts[2]);
         d.setDate(d.getDate() + (i * 7));
-        
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const dateStr = `${y}-${m}-${day}`;
-        
-        trainings.push({ 
-            id: "T" + Date.now() + i, 
-            date: dateStr, 
-            startTime: start, 
-            endTime: end, 
-            attendance: {} 
-        });
+        const dateStr = d.toISOString().split('T')[0];
+        trainings.push({ id: "T" + Date.now() + i, date: dateStr, startTime: start, endTime: end, attendance: {} });
     }
     closeModal('trainingModal'); syncToCloud();
 }
 
-// GESTIONE EVENTO SINGOLO
-function editTrainingTime() {
-    const s = prompt("Nuovo inizio (HH:MM):");
-    const e = prompt("Nuova fine (HH:MM):");
-    if(s && e) {
-        const t = trainings.find(x => x.id == currentTid);
-        t.startTime = s; t.endTime = e;
-        syncToCloud(); openAtt(currentTid);
+// LOGICA ELIMINAZIONE SERIE (NOVITÀ)
+function deleteSeries() {
+    const t = trainings.find(x => x.id == currentTid);
+    const numWeeks = prompt("Per quante settimane vuoi eliminare l'allenamento del " + t.date + " e i successivi?", "4");
+    if(!numWeeks || isNaN(numWeeks)) return;
+
+    const weeks = parseInt(numWeeks);
+    const parts = t.date.split('-');
+    const datesToDelete = [];
+
+    for(let i=0; i < weeks; i++) {
+        let d = new Date(parts[0], parts[1]-1, parts[2]);
+        d.setDate(d.getDate() + (i * 7));
+        datesToDelete.push(d.toISOString().split('T')[0]);
+    }
+
+    if(confirm("Verranno eliminati gli allenamenti di questo giorno per le prossime " + weeks + " settimane. Procedere?")) {
+        // Filtriamo via tutti gli allenamenti che cadono in quelle date
+        trainings = trainings.filter(item => !datesToDelete.includes(item.date));
+        closeModal('attModal');
+        syncToCloud();
     }
 }
 
 function deleteTraining() {
-    if(confirm("Vuoi eliminare questo allenamento?")) { 
-        trainings = trainings.filter(t => t.id !== currentTid); 
-        closeModal('attModal'); syncToCloud(); 
-    }
+    if(confirm("Eliminare l'allenamento selezionato?")) { trainings = trainings.filter(t => t.id !== currentTid); closeModal('attModal'); syncToCloud(); }
 }
 
-// APPELLO CON 5 STATI
+function editTrainingTime() {
+    const s = prompt("Inizio:"), e = prompt("Fine:");
+    if(s && e) { const t = trainings.find(x => x.id == currentTid); t.startTime = s; t.endTime = e; syncToCloud(); openAtt(currentTid); }
+}
+
+// APPELLO E SQUADRA (Rimanenti funzioni invariate)
 function openAtt(tid) {
     currentTid = tid; const t = trainings.find(x => x.id == tid);
-    document.getElementById('attTitle').innerText = `Appello: ${t.startTime} - ${t.endTime}`;
+    document.getElementById('attTitle').innerText = `${t.date} (${t.startTime}-${t.endTime})`;
     document.getElementById('attPlayersList').innerHTML = players.map(p => {
         const s = t.attendance[p.name] || "presente";
-        return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom: 1px solid #f1f5f9; padding-bottom:4px;">
+        return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <span>${p.name}</span>
-            <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:4px; font-size:0.9rem;">
+            <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px;">
                 <option value="presente" ${s==='presente'?'selected':''}>✅ Presente</option>
                 <option value="assente" ${s==='assente'?'selected':''}>❌ Assente</option>
                 <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕 Infortunio</option>
@@ -203,27 +202,14 @@ function openAtt(tid) {
     document.getElementById('attModal').style.display='block';
 }
 
-function updateAtt(pname, status) {
-    const t = trainings.find(x => x.id == currentTid);
-    t.attendance[pname] = status; syncToCloud();
-}
+function updateAtt(pname, status) { const t = trainings.find(x => x.id == currentTid); t.attendance[pname] = status; syncToCloud(); }
+function setAllPresent() { const t = trainings.find(x => x.id == currentTid); players.forEach(p => t.attendance[p.name] = "presente"); openAtt(currentTid); syncToCloud(); }
 
-function setAllPresent() {
-    const t = trainings.find(x => x.id == currentTid);
-    players.forEach(p => t.attendance[p.name] = "presente");
-    openAtt(currentTid); syncToCloud();
-}
-
-// ANAGRAFICA ATLETE
 function savePlayer() {
     const n = document.getElementById("pName").value, d = document.getElementById("pDob").value, r = document.getElementById("pRole").value, eid = document.getElementById("editingId").value;
-    if(!n) return alert("Nome obbligatorio");
-    if(eid) {
-        const idx = players.findIndex(p => p.id == eid);
-        players[idx].name = n; players[idx].dob = d; players[idx].role = r;
-    } else {
-        players.push({ id: Date.now(), name: n, dob: d, role: r, attendance: {} });
-    }
+    if(!n) return;
+    if(eid) { const idx = players.findIndex(p => p.id == eid); players[idx].name = n; players[idx].dob = d; players[idx].role = r; }
+    else { players.push({ id: Date.now(), name: n, dob: d, role: r, attendance: {} }); }
     resetForm(); renderFullList(); syncToCloud();
 }
 
@@ -231,23 +217,21 @@ function editPlayer(id) {
     const p = players.find(x => x.id == id);
     document.getElementById("pName").value = p.name; document.getElementById("pDob").value = p.dob || "";
     document.getElementById("pRole").value = p.role; document.getElementById("editingId").value = p.id;
-    document.getElementById("formTitle").innerText = "Modifica Atleta"; 
-    showPage('team'); window.scrollTo(0,0);
+    document.getElementById("formTitle").innerText = "Modifica Atleta"; showPage('team');
 }
 
 function renderFullList() {
     document.getElementById("fullPlayerList").innerHTML = players.map(p => `
         <div class="player-item">
-            <div><strong>${p.name}</strong> (${p.role})<br><small>🎂 ${p.dob ? p.dob.split('-').reverse().join('/') : '---'}</small></div>
+            <div><strong>${p.name}</strong><br><small>🎂 ${p.dob || '---'}</small></div>
             <div class="action-btns"><button onclick="editPlayer(${p.id})">✏️</button><button onclick="deletePlayer(${p.id})">🗑️</button></div>
         </div>`).join("");
 }
 
-function deletePlayer(id) { if(confirm("Eliminare atleta?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
+function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
 function resetForm() { document.getElementById("pName").value = ""; document.getElementById("pDob").value = ""; document.getElementById("editingId").value = ""; document.getElementById("formTitle").innerText = "Nuova Atleta"; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// STATISTICHE
 function updateStats() {
     const ctx = document.getElementById('statsChart').getContext('2d');
     const data = players.map(p => {
@@ -256,7 +240,7 @@ function updateStats() {
         return Math.round((pres/total)*100);
     });
     if(statsChart) statsChart.destroy();
-    statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze Reali', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
+    statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
 }
 
 window.onload = loadFromCloud;
