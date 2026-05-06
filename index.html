@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
     <style>
-        :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --edit: #10b981; }
+        :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --edit: #10b981; --danger: #ef4444; }
         body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; overflow-x: hidden; }
         header { background: var(--primary); color: white; padding: 1rem; text-align: center; font-weight: bold; border-bottom: 4px solid var(--secondary); }
         .container { padding: 15px; max-width: 900px; margin: auto; }
@@ -28,31 +28,22 @@
         .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 100; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; touch-action: none; }
         .bench .player-circle { position: relative; top: auto !important; left: auto !important; }
 
-        .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .btn-t { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: bold; }
-        .btn-t.active { background: var(--secondary); color: white; border-color: var(--secondary); }
-        
         .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        .btn-all { background: #10b981; margin-bottom: 15px; }
+        .btn-danger { background: var(--danger) !important; margin-top: 5px; }
+        .btn-edit-small { background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 5000; }
-        .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 15px; max-height: 80vh; overflow-y: auto; }
-        .sync-status { font-size: 0.7rem; color: #10b981; text-align: center; margin-top: 5px; }
+        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 15px; max-height: 85vh; overflow-y: auto; }
         .hidden { display: none !important; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         
         .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; }
-        .player-info { display:flex; flex-direction:column; gap:2px; }
-        .player-dob { font-size: 0.85rem; color: #64748b; }
-        .action-btns { display: flex; gap: 10px; }
         .action-btns button { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<header>🏐 Volley Manager Cloud
-    <div id="syncIndicator" class="sync-status">Caricamento...</div>
-</header>
+<header>🏐 Volley Manager Cloud Pro</header>
 
 <div class="container">
     <!-- HOME -->
@@ -66,45 +57,28 @@
         <div class="card">
             <h3 id="formTitle">Nuova Atleta</h3>
             <input id="pName" placeholder="Nome completo">
-            <label style="font-size: 0.8rem; color: #64748b; margin-left: 5px;">Data di Nascita:</label>
             <input type="date" id="pDob">
             <select id="pRole">
-                <option value="P">Palleggiatore</option>
-                <option value="S">Schiacciatore</option>
-                <option value="C">Centrale</option>
-                <option value="O">Opposto</option>
-                <option value="L">Libero</option>
+                <option value="P">Palleggiatore</option><option value="S">Schiacciatore</option><option value="C">Centrale</option><option value="O">Opposto</option><option value="L">Libero</option>
             </select>
             <input type="hidden" id="editingId">
             <button class="btn-main" id="btnSavePlayer" onclick="savePlayer()">Aggiungi Atleta</button>
         </div>
-        <div class="card">
-            <div class="section-title"><span>👥</span> Elenco Squadra</div>
-            <div id="fullPlayerList"></div>
-        </div>
+        <div class="card"><div id="fullPlayerList"></div></div>
     </div>
 
     <!-- LAVAGNA -->
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Schemi</div>
-            <div class="toolbar">
-                <button id="btnMove" class="btn-t active" onclick="setTool('move')">🖐️ Muovi</button>
-                <button id="btnDraw" class="btn-t" onclick="setTool('draw')">🏹 Frecce</button>
-                <button class="btn-t" onclick="clearArrows()">🗑️ Pulisci</button>
-            </div>
-            
             <div class="tactics-layout" id="tacticsLayout">
                 <div class="bench">
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
-                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
-                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">O</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
                 </div>
-
                 <div class="court-container">
                     <canvas id="tacticsCanvas" width="300" height="500"></canvas>
                     <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
@@ -119,15 +93,32 @@
     </div>
 </div>
 
-<!-- MODALI -->
-<div id="trainingModal" class="modal"><div class="modal-content"><h3>Nuovo Allenamento</h3><p id="selDateText"></p><input type="time" id="startTime" value="18:30"><button class="btn-main" onclick="saveTraining()">Crea</button><button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button></div></div>
+<!-- MODALE NUOVO ALLENAMENTO -->
+<div id="trainingModal" class="modal">
+    <div class="modal-content">
+        <h3>Nuovo Allenamento</h3>
+        <p id="selDateText"></p>
+        <label>Orario Inizio:</label>
+        <input type="time" id="startTime" value="18:30">
+        <label>Ripeti settimanalmente per (volte):</label>
+        <input type="number" id="repeatWeeks" value="1" min="1" max="20">
+        <button class="btn-main" onclick="saveTraining()">Crea Allenamento/i</button>
+        <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button>
+    </div>
+</div>
 
+<!-- MODALE APPELLO E GESTIONE -->
 <div id="attModal" class="modal">
     <div class="modal-content">
-        <h3>Appello</h3>
-        <button class="btn-main btn-all" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="attTitle">Appello</h3>
+            <button class="btn-edit-small" onclick="editTrainingTime()">Modifica Ora</button>
+        </div>
+        <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
         <div id="attPlayersList"></div>
+        <hr>
         <button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button>
+        <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Allenamento</button>
     </div>
 </div>
 
@@ -135,25 +126,18 @@
 
 <script>
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
-let players = [], trainings = [], selectedDate = "", currentTid = null, currentTool = 'move', statsChart = null, calendar = null;
+let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null;
 
 async function syncToCloud() {
-    document.getElementById('syncIndicator').innerText = "Sincronizzazione...";
-    try {
-        await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) });
-        document.getElementById('syncIndicator').innerText = "Dati Salvati";
-        if(!document.getElementById('home').classList.contains('hidden')) renderCalendar();
-    } catch(e) { document.getElementById('syncIndicator').innerText = "Errore Cloud"; }
+    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); } catch(e) { console.log("Errore sync"); }
 }
 
 async function loadFromCloud() {
     try {
-        const res = await fetch(CLOUD_URL);
-        const data = await res.json();
+        const res = await fetch(CLOUD_URL); const data = await res.json();
         if(data) { players = data.players || []; trainings = data.trainings || []; }
-        document.getElementById('syncIndicator').innerText = "Dati Caricati";
         renderFullList(); showPage('home');
-    } catch(e) { document.getElementById('syncIndicator').innerText = "Pronto"; showPage('home'); }
+    } catch(e) { showPage('home'); }
 }
 
 function showPage(page) {
@@ -170,8 +154,8 @@ function renderCalendar() {
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth', locale: 'it', height: 'auto',
         events: trainings.map(t => {
-            const presenti = Object.values(t.attendance).filter(v => v === "presente").length;
-            return { id: t.id, title: `🏐 ${t.startTime} (${presenti}/${players.length})`, start: t.date, backgroundColor: '#1e3a8a' };
+            const pres = Object.values(t.attendance).filter(v => v === "presente").length;
+            return { id: t.id, title: `${t.startTime} (${pres}/${players.length})`, start: t.date };
         }),
         dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = info.dateStr; document.getElementById('trainingModal').style.display='block'; },
         eventClick: (info) => openAtt(info.event.id)
@@ -179,58 +163,44 @@ function renderCalendar() {
     calendar.render();
 }
 
-// SQUADRA (Nascita e Matita inclusi)
-function savePlayer() {
-    const name = document.getElementById("pName").value;
-    const dob = document.getElementById("pDob").value;
-    const role = document.getElementById("pRole").value;
-    const editingId = document.getElementById("editingId").value;
-    if(!name) return alert("Inserisci il nome!");
-    if(editingId) {
-        const index = players.findIndex(p => p.id == editingId);
-        players[index].name = name; players[index].dob = dob; players[index].role = role;
-    } else {
-        players.push({ id: Date.now(), name, dob, role, attendance: {} });
+// LOGICA ALLENAMENTI (CREA, MODIFICA, ELIMINA, RIPETI)
+function saveTraining() {
+    const time = document.getElementById('startTime').value;
+    const reps = parseInt(document.getElementById('repeatWeeks').value) || 1;
+    const baseDate = new Date(selectedDate);
+
+    for(let i=0; i<reps; i++) {
+        let d = new Date(baseDate);
+        d.setDate(baseDate.getDate() + (i * 7));
+        const dateStr = d.toISOString().split('T')[0];
+        trainings.push({ id: "T"+Date.now()+i, date: dateStr, startTime: time, attendance: {} });
     }
-    resetForm(); renderFullList(); syncToCloud();
+    closeModal('trainingModal'); syncToCloud();
 }
 
-function resetForm() {
-    document.getElementById("pName").value = ""; document.getElementById("pDob").value = "";
-    document.getElementById("pRole").value = "P"; document.getElementById("editingId").value = "";
-    document.getElementById("formTitle").innerText = "Nuova Atleta"; document.getElementById("btnSavePlayer").innerText = "Aggiungi Atleta";
+function deleteTraining() {
+    if(confirm("Eliminare definitivamente questo allenamento?")) {
+        trainings = trainings.filter(t => t.id !== currentTid);
+        closeModal('attModal'); syncToCloud();
+    }
 }
 
-function editPlayer(id) {
-    const p = players.find(x => x.id == id);
-    document.getElementById("pName").value = p.name; document.getElementById("pDob").value = p.dob || "";
-    document.getElementById("pRole").value = p.role; document.getElementById("editingId").value = p.id;
-    document.getElementById("formTitle").innerText = "Modifica Atleta"; document.getElementById("btnSavePlayer").innerText = "Salva Modifiche";
-    window.scrollTo(0,0);
+function editTrainingTime() {
+    const nuovoOrario = prompt("Inserisci il nuovo orario (es. 19:00):");
+    if(nuovoOrario) {
+        const t = trainings.find(x => x.id == currentTid);
+        t.startTime = nuovoOrario;
+        syncToCloud(); openAtt(currentTid);
+    }
 }
 
-function renderFullList() {
-    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
-        <div class="player-item">
-            <div class="player-info">
-                <strong>${p.name} (${p.role})</strong>
-                <span class="player-dob">${p.dob ? '🎂 ' + p.dob.split('-').reverse().join('/') : 'Data non inserita'}</span>
-            </div>
-            <div class="action-btns">
-                <button onclick="editPlayer(${p.id})">✏️</button>
-                <button onclick="deletePlayer(${p.id})">🗑️</button>
-            </div>
-        </div>`).join("");
-}
-
-function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
-
-// APPELLO (Menu esteso)
+// APPELLO
 function openAtt(tid) {
     currentTid = tid; const t = trainings.find(x => x.id == tid);
+    document.getElementById('attTitle').innerText = `Appello ${t.date} ore ${t.startTime}`;
     document.getElementById('attPlayersList').innerHTML = players.map(p => {
         const s = t.attendance[p.name] || "presente";
-        return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid #f1f5f9; padding-bottom:5px;">
+        return `<div style="display:flex; justify-content:space-between; margin-bottom:8px;">
             <span>${p.name}</span>
             <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px;">
                 <option value="presente" ${s==='presente'?'selected':''}>✅ Presente</option>
@@ -238,15 +208,14 @@ function openAtt(tid) {
                 <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕 Infortunio</option>
                 <option value="malattia" ${s==='malattia'?'selected':''}>🤒 Malattia</option>
                 <option value="gita" ${s==='gita'?'selected':''}>🚌 Gita</option>
-            </select>
-        </div>`;
+            </select></div>`;
     }).join("");
     document.getElementById('attModal').style.display='block';
 }
 
 function setAllPresent() {
     const t = trainings.find(x => x.id == currentTid);
-    players.forEach(p => { t.attendance[p.name] = "presente"; });
+    players.forEach(p => t.attendance[p.name] = "presente");
     openAtt(currentTid); syncToCloud();
 }
 
@@ -255,41 +224,67 @@ function updateAtt(pname, status) {
     t.attendance[pname] = status; syncToCloud();
 }
 
-function saveTraining() {
-    trainings.push({ id: "T"+Date.now(), date: selectedDate, startTime: document.getElementById('startTime').value, attendance: {} });
-    closeModal('trainingModal'); syncToCloud();
+// GESTIONE SQUADRA (Nascita, Matita, Modifica)
+function savePlayer() {
+    const n = document.getElementById("pName").value; const d = document.getElementById("pDob").value;
+    const r = document.getElementById("pRole").value; const eid = document.getElementById("editingId").value;
+    if(!n) return;
+    if(eid) {
+        const idx = players.findIndex(p => p.id == eid);
+        players[idx].name = n; players[idx].dob = d; players[idx].role = r;
+    } else {
+        players.push({ id: Date.now(), name: n, dob: d, role: r, attendance: {} });
+    }
+    resetForm(); renderFullList(); syncToCloud();
 }
+
+function editPlayer(id) {
+    const p = players.find(x => x.id == id);
+    document.getElementById("pName").value = p.name; document.getElementById("pDob").value = p.dob || "";
+    document.getElementById("pRole").value = p.role; document.getElementById("editingId").value = p.id;
+    document.getElementById("formTitle").innerText = "Modifica Atleta"; window.scrollTo(0,0);
+}
+
+function resetForm() {
+    document.getElementById("pName").value = ""; document.getElementById("pDob").value = "";
+    document.getElementById("editingId").value = ""; document.getElementById("formTitle").innerText = "Nuova Atleta";
+}
+
+function renderFullList() {
+    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
+        <div class="player-item">
+            <div><strong>${p.name}</strong><br><small>${p.dob || '---'}</small></div>
+            <div class="action-btns"><button onclick="editPlayer(${p.id})">✏️</button><button onclick="deletePlayer(${p.id})">🗑️</button></div>
+        </div>`).join("");
+}
+
+function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
 
 function updateStats() {
     const ctx = document.getElementById('statsChart').getContext('2d');
     const data = players.map(p => {
         const total = trainings.length; if(total === 0) return 0;
-        const pres = trainings.filter(t => t.attendance[p.name] === "presente" || !t.attendance[p.name]).length;
+        const pres = trainings.filter(t => t.attendance[p.name] === "presente").length;
         return Math.round((pres/total)*100);
     });
     if(statsChart) statsChart.destroy();
-    statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
+    statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
+let statsChart = null;
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// LAVAGNA TATTICA
-const canvas = document.getElementById('tacticsCanvas'); const ctx = canvas.getContext('2d');
-let drawing = false, startX, startY;
-function drawVolleyCourt() { ctx.clearRect(0, 0, 300, 500); ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeRect(0, 0, 300, 500); ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(300, 250); ctx.stroke(); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(0, 167); ctx.lineTo(300, 167); ctx.moveTo(0, 333); ctx.lineTo(300, 333); ctx.stroke(); ctx.setLineDash([]); }
-function setTool(t) { currentTool = t; document.getElementById('btnMove').classList.toggle('active', t==='move'); document.getElementById('btnDraw').classList.toggle('active', t==='draw'); }
-function clearArrows() { drawVolleyCourt(); }
-canvas.addEventListener('mousedown', sDraw); canvas.addEventListener('mouseup', eDraw);
-canvas.addEventListener('touchstart', (e) => sDraw(e.touches[0])); canvas.addEventListener('touchend', (e) => eDraw(e.changedTouches[0]));
-function sDraw(e) { if(currentTool !== 'draw') return; drawing = true; const r = canvas.getBoundingClientRect(); startX = (e.clientX || e.pageX) - r.left; startY = (e.clientY || e.pageY) - r.top; }
-function eDraw(e) { if(!drawing) return; const r = canvas.getBoundingClientRect(); drawArrow(startX, startY, (e.clientX || e.pageX) - r.left, (e.clientY || e.pageY) - r.top); drawing = false; }
-function drawArrow(fx, fy, tx, ty) { const headlen = 12; const angle = Math.atan2(ty - fy, tx - fx); ctx.strokeStyle = "yellow"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke(); ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx - headlen * Math.cos(angle - Math.PI / 6), ty - headlen * Math.sin(angle - Math.PI / 6)); ctx.moveTo(tx, ty); ctx.lineTo(tx - headlen * Math.cos(angle + Math.PI / 6), ty - headlen * Math.sin(angle + Math.PI / 6)); ctx.stroke(); }
+// LAVAGNA (Canvas)
+function drawVolleyCourt() {
+    const cvs = document.getElementById('tacticsCanvas'); const c = cvs.getContext('2d');
+    c.clearRect(0, 0, 300, 500); c.strokeStyle = "white"; c.lineWidth = 3; c.strokeRect(0, 0, 300, 500);
+    c.beginPath(); c.moveTo(0, 250); c.lineTo(300, 250); c.stroke();
+}
 function dragPlayer(el) {
     el.onmousedown = el.ontouchstart = (e) => {
-        if(currentTool !== 'move') return; e.preventDefault();
-        let x = e.clientX || e.touches[0].clientX; let y = e.clientY || e.touches[0].clientY;
+        e.preventDefault(); let x = e.clientX || e.touches[0].clientX; let y = e.clientY || e.touches[0].clientY;
         if(el.parentElement.classList.contains('bench')) {
-            const rect = el.getBoundingClientRect(); const parentRect = document.getElementById('tacticsLayout').getBoundingClientRect();
-            el.style.position = 'absolute'; el.style.top = (rect.top - parentRect.top) + 'px'; el.style.left = (rect.left - parentRect.left) + 'px';
+            const rect = el.getBoundingClientRect(); const pRect = document.getElementById('tacticsLayout').getBoundingClientRect();
+            el.style.position = 'absolute'; el.style.top = (rect.top - pRect.top) + 'px'; el.style.left = (rect.left - pRect.left) + 'px';
             document.getElementById('tacticsLayout').appendChild(el);
         }
         document.onmousemove = document.ontouchmove = (ev) => {
