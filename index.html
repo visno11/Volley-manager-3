@@ -16,18 +16,9 @@
         .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--primary); font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
         
         #calendar { min-height: 400px; background: white; padding: 10px; border-radius: 8px; }
-        
         .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 4000; }
         .nav button { background:none; border:none; font-size:24px; cursor: pointer; }
         
-        /* Lavagna Tattica */
-        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; position: relative; min-height: 520px; }
-        .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; z-index: 5; }
-        .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; z-index: 10; }
-        #tacticsCanvas { position: absolute; top: 0; left: 0; z-index: 11; cursor: crosshair; }
-        .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 100; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; touch-action: none; }
-        .bench .player-circle { position: relative; top: auto !important; left: auto !important; }
-
         .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-danger { background: var(--danger) !important; margin-top: 5px; }
         .btn-edit-small { background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
@@ -39,6 +30,12 @@
         
         .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; }
         .action-btns button { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+
+        /* Lavagna Tattica */
+        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; position: relative; min-height: 520px; }
+        .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; z-index: 5; }
+        .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; z-index: 10; }
+        .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 100; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; touch-action: none; }
     </style>
 </head>
 <body>
@@ -46,13 +43,11 @@
 <header>🏐 Volley Manager Cloud Pro</header>
 
 <div class="container">
-    <!-- HOME -->
     <div id="home">
         <div class="card"><div class="section-title"><span>📅</span> Calendario</div><div id="calendar"></div></div>
         <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
-    <!-- SQUADRA -->
     <div id="team" class="hidden">
         <div class="card">
             <h3 id="formTitle">Nuova Atleta</h3>
@@ -62,31 +57,21 @@
                 <option value="P">Palleggiatore</option><option value="S">Schiacciatore</option><option value="C">Centrale</option><option value="O">Opposto</option><option value="L">Libero</option>
             </select>
             <input type="hidden" id="editingId">
-            <button class="btn-main" id="btnSavePlayer" onclick="savePlayer()">Aggiungi Atleta</button>
+            <button class="btn-main" onclick="savePlayer()">Salva Atleta</button>
         </div>
         <div class="card"><div id="fullPlayerList"></div></div>
     </div>
 
-    <!-- LAVAGNA -->
     <div id="tactics" class="hidden">
         <div class="card">
-            <div class="section-title"><span>📋</span> Lavagna Schemi</div>
+            <div class="section-title"><span>📋</span> Lavagna</div>
             <div class="tactics-layout" id="tacticsLayout">
                 <div class="bench">
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
-                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
-                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">O</div>
-                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
                 </div>
                 <div class="court-container">
-                    <canvas id="tacticsCanvas" width="300" height="500"></canvas>
                     <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
-                    <div class="player-circle" style="top:55px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
-                    <div class="player-circle" style="top:150px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
-                    <div class="player-circle" style="top:150px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">2</div>
-                    <div class="player-circle" style="top:410px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">5</div>
-                    <div class="player-circle" style="top:410px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">1</div>
                 </div>
             </div>
         </div>
@@ -98,11 +83,13 @@
     <div class="modal-content">
         <h3>Nuovo Allenamento</h3>
         <p id="selDateText"></p>
-        <label>Orario Inizio:</label>
-        <input type="time" id="startTime" value="18:30">
-        <label>Ripeti settimanalmente per (volte):</label>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1;"><label>Inizio:</label><input type="time" id="startTime" value="18:30"></div>
+            <div style="flex:1;"><label>Fine:</label><input type="time" id="endTime" value="20:30"></div>
+        </div>
+        <label>Ripeti ogni settimana per (volte):</label>
         <input type="number" id="repeatWeeks" value="1" min="1" max="20">
-        <button class="btn-main" onclick="saveTraining()">Crea Allenamento/i</button>
+        <button class="btn-main" onclick="saveTraining()">Crea e Sincronizza</button>
         <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button>
     </div>
 </div>
@@ -112,12 +99,12 @@
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h3 id="attTitle">Appello</h3>
-            <button class="btn-edit-small" onclick="editTrainingTime()">Modifica Ora</button>
+            <button class="btn-edit-small" onclick="editTrainingTime()">Modifica Orari</button>
         </div>
         <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
         <div id="attPlayersList"></div>
         <hr>
-        <button class="btn-main" onclick="closeModal('attModal')">Salva e Chiudi</button>
+        <button class="btn-main" onclick="closeModal('attModal')">Chiudi</button>
         <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Allenamento</button>
     </div>
 </div>
@@ -126,10 +113,10 @@
 
 <script>
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
-let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null;
+let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
 
 async function syncToCloud() {
-    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); } catch(e) { console.log("Errore sync"); }
+    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); } catch(e) { console.log("Sync fallito"); }
 }
 
 async function loadFromCloud() {
@@ -144,7 +131,6 @@ function showPage(page) {
     document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
     document.getElementById(page).classList.remove('hidden');
     if(page === 'home') { renderCalendar(); updateStats(); }
-    if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
 }
 
 // CALENDARIO
@@ -155,17 +141,18 @@ function renderCalendar() {
         initialView: 'dayGridMonth', locale: 'it', height: 'auto',
         events: trainings.map(t => {
             const pres = Object.values(t.attendance).filter(v => v === "presente").length;
-            return { id: t.id, title: `${t.startTime} (${pres}/${players.length})`, start: t.date };
+            return { id: t.id, title: `${t.startTime}-${t.endTime || ''} (${pres}/${players.length})`, start: t.date };
         }),
-        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = info.dateStr; document.getElementById('trainingModal').style.display='block'; },
+        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = "Data: " + info.dateStr; document.getElementById('trainingModal').style.display='block'; },
         eventClick: (info) => openAtt(info.event.id)
     });
     calendar.render();
 }
 
-// LOGICA ALLENAMENTI (CREA, MODIFICA, ELIMINA, RIPETI)
+// GESTIONE ALLENAMENTI
 function saveTraining() {
-    const time = document.getElementById('startTime').value;
+    const start = document.getElementById('startTime').value;
+    const end = document.getElementById('endTime').value;
     const reps = parseInt(document.getElementById('repeatWeeks').value) || 1;
     const baseDate = new Date(selectedDate);
 
@@ -173,34 +160,38 @@ function saveTraining() {
         let d = new Date(baseDate);
         d.setDate(baseDate.getDate() + (i * 7));
         const dateStr = d.toISOString().split('T')[0];
-        trainings.push({ id: "T"+Date.now()+i, date: dateStr, startTime: time, attendance: {} });
+        trainings.push({ 
+            id: "T" + Date.now() + i, 
+            date: dateStr, 
+            startTime: start, 
+            endTime: end, 
+            attendance: {} 
+        });
     }
     closeModal('trainingModal'); syncToCloud();
 }
 
-function deleteTraining() {
-    if(confirm("Eliminare definitivamente questo allenamento?")) {
-        trainings = trainings.filter(t => t.id !== currentTid);
-        closeModal('attModal'); syncToCloud();
+function editTrainingTime() {
+    const s = prompt("Nuovo orario INIZIO (HH:MM):");
+    const e = prompt("Nuovo orario FINE (HH:MM):");
+    if(s && e) {
+        const t = trainings.find(x => x.id == currentTid);
+        t.startTime = s; t.endTime = e;
+        syncToCloud(); openAtt(currentTid);
     }
 }
 
-function editTrainingTime() {
-    const nuovoOrario = prompt("Inserisci il nuovo orario (es. 19:00):");
-    if(nuovoOrario) {
-        const t = trainings.find(x => x.id == currentTid);
-        t.startTime = nuovoOrario;
-        syncToCloud(); openAtt(currentTid);
-    }
+function deleteTraining() {
+    if(confirm("Eliminare l'evento?")) { trainings = trainings.filter(t => t.id !== currentTid); closeModal('attModal'); syncToCloud(); }
 }
 
 // APPELLO
 function openAtt(tid) {
     currentTid = tid; const t = trainings.find(x => x.id == tid);
-    document.getElementById('attTitle').innerText = `Appello ${t.date} ore ${t.startTime}`;
+    document.getElementById('attTitle').innerText = `${t.startTime} - ${t.endTime}`;
     document.getElementById('attPlayersList').innerHTML = players.map(p => {
         const s = t.attendance[p.name] || "presente";
-        return `<div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <span>${p.name}</span>
             <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px;">
                 <option value="presente" ${s==='presente'?'selected':''}>✅ Presente</option>
@@ -213,21 +204,20 @@ function openAtt(tid) {
     document.getElementById('attModal').style.display='block';
 }
 
+function updateAtt(pname, status) {
+    const t = trainings.find(x => x.id == currentTid);
+    t.attendance[pname] = status; syncToCloud();
+}
+
 function setAllPresent() {
     const t = trainings.find(x => x.id == currentTid);
     players.forEach(p => t.attendance[p.name] = "presente");
     openAtt(currentTid); syncToCloud();
 }
 
-function updateAtt(pname, status) {
-    const t = trainings.find(x => x.id == currentTid);
-    t.attendance[pname] = status; syncToCloud();
-}
-
-// GESTIONE SQUADRA (Nascita, Matita, Modifica)
+// SQUADRA
 function savePlayer() {
-    const n = document.getElementById("pName").value; const d = document.getElementById("pDob").value;
-    const r = document.getElementById("pRole").value; const eid = document.getElementById("editingId").value;
+    const n = document.getElementById("pName").value, d = document.getElementById("pDob").value, r = document.getElementById("pRole").value, eid = document.getElementById("editingId").value;
     if(!n) return;
     if(eid) {
         const idx = players.findIndex(p => p.id == eid);
@@ -245,20 +235,17 @@ function editPlayer(id) {
     document.getElementById("formTitle").innerText = "Modifica Atleta"; window.scrollTo(0,0);
 }
 
-function resetForm() {
-    document.getElementById("pName").value = ""; document.getElementById("pDob").value = "";
-    document.getElementById("editingId").value = ""; document.getElementById("formTitle").innerText = "Nuova Atleta";
-}
-
 function renderFullList() {
     document.getElementById("fullPlayerList").innerHTML = players.map(p => `
         <div class="player-item">
-            <div><strong>${p.name}</strong><br><small>${p.dob || '---'}</small></div>
+            <div><strong>${p.name}</strong><br><small>🎂 ${p.dob || 'Non inserita'}</small></div>
             <div class="action-btns"><button onclick="editPlayer(${p.id})">✏️</button><button onclick="deletePlayer(${p.id})">🗑️</button></div>
         </div>`).join("");
 }
 
 function deletePlayer(id) { if(confirm("Eliminare?")) { players = players.filter(p => p.id !== id); syncToCloud(); renderFullList(); } }
+function resetForm() { document.getElementById("pName").value = ""; document.getElementById("pDob").value = ""; document.getElementById("editingId").value = ""; document.getElementById("formTitle").innerText = "Nuova Atleta"; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function updateStats() {
     const ctx = document.getElementById('statsChart').getContext('2d');
@@ -270,15 +257,7 @@ function updateStats() {
     if(statsChart) statsChart.destroy();
     statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
-let statsChart = null;
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// LAVAGNA (Canvas)
-function drawVolleyCourt() {
-    const cvs = document.getElementById('tacticsCanvas'); const c = cvs.getContext('2d');
-    c.clearRect(0, 0, 300, 500); c.strokeStyle = "white"; c.lineWidth = 3; c.strokeRect(0, 0, 300, 500);
-    c.beginPath(); c.moveTo(0, 250); c.lineTo(300, 250); c.stroke();
-}
 function dragPlayer(el) {
     el.onmousedown = el.ontouchstart = (e) => {
         e.preventDefault(); let x = e.clientX || e.touches[0].clientX; let y = e.clientY || e.touches[0].clientY;
