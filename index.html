@@ -9,7 +9,7 @@
 
     <style>
         :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --danger: #ef4444; }
-        body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; }
+        body { font-family: 'Inter', sans-serif; margin:0; background: var(--bg); color: #1e293b; padding-bottom: 80px; overflow-x: hidden; }
         header { background: var(--primary); color: white; padding: 1rem; text-align: center; font-weight: bold; border-bottom: 4px solid var(--secondary); }
         .container { padding: 15px; max-width: 900px; margin: auto; }
         .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
@@ -19,11 +19,14 @@
         .nav { display:flex; justify-content:space-around; background:var(--white); padding:15px; border-top:1px solid #ccc; position:fixed; bottom:0; width:100%; z-index: 4000; }
         .nav button { background:none; border:none; font-size:24px; cursor: pointer; }
         
-        /* Lavagna Tattica */
-        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; position: relative; min-height: 520px; margin-top: 10px;}
+        /* --- Lavagna Tattica Completa --- */
+        .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 10px; position: relative; min-height: 520px; margin-top: 10px; }
         .bench { width: 60px; height: 500px; background: #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; z-index: 5; }
         .court-container { position: relative; width: 300px; height: 500px; background: #3b82f6; border: 5px solid white; border-radius: 4px; z-index: 10; }
+        #tacticsCanvas { position: absolute; top: 0; left: 0; z-index: 11; }
+        
         .player-circle { width: 34px; height: 34px; background: var(--primary); color: white; border-radius: 50%; position: absolute; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 100; cursor: move; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-size: 14px; touch-action: none; }
+        .bench .player-circle { position: relative; top: auto !important; left: auto !important; } /* Reset per panchina */
 
         .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-danger { background: var(--danger) !important; margin-top: 5px; }
@@ -49,14 +52,13 @@
 
     <div id="team" class="hidden">
         <div class="card">
-            <h3 id="formTitle">Nuova Atleta</h3>
+            <h3>Gestione Atleta</h3>
             <input id="pName" placeholder="Nome completo">
-            <input type="date" id="pDob">
             <select id="pRole">
                 <option value="P">Palleggiatore</option><option value="S">Schiacciatore</option><option value="C">Centrale</option><option value="O">Opposto</option><option value="L">Libero</option>
             </select>
             <input type="hidden" id="editingId">
-            <button class="btn-main" onclick="savePlayer()">Salva Atleta</button>
+            <button class="btn-main" onclick="savePlayer()">Salva</button>
         </div>
         <div class="card"><div id="fullPlayerList"></div></div>
     </div>
@@ -64,17 +66,27 @@
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Schemi</div>
+            
             <div class="tactics-layout" id="tacticsLayout">
-                <div class="bench">
+                <div class="bench" id="playerBench">
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">O</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
                 </div>
-                <div class="court-container">
+
+                <div class="court-container" id="courtFrame">
+                    <canvas id="tacticsCanvas" width="300" height="500"></canvas>
+                    
                     <div class="player-circle" style="top:410px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
                     <div class="player-circle" style="top:55px; left:133px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
                     <div class="player-circle" style="top:150px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
                     <div class="player-circle" style="top:150px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">2</div>
+                    <div class="player-circle" style="top:410px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">5</div>
+                    <div class="player-circle" style="top:410px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">1</div>
                 </div>
             </div>
         </div>
@@ -84,13 +96,13 @@
 <div id="trainingModal" class="modal">
     <div class="modal-content">
         <h3>Nuovo Allenamento</h3>
-        <p id="selDateText" style="font-weight: bold;"></p>
+        <p id="selDateText"></p>
         <div style="display: flex; gap: 10px;">
             <div style="flex:1;"><label>Inizio:</label><input type="time" id="startTime" value="18:30"></div>
             <div style="flex:1;"><label>Fine:</label><input type="time" id="endTime" value="20:30"></div>
         </div>
-        <label><strong>Ripeti ogni 7 giorni per:</strong></label>
-        <input type="number" id="repeatWeeks" value="1" min="1" max="52">
+        <label>Ripeti per X settimane:</label>
+        <input type="number" id="repeatWeeks" value="1" min="1">
         <button class="btn-main" onclick="saveTraining()">Crea</button>
         <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:10px;">Annulla</button>
     </div>
@@ -99,13 +111,11 @@
 <div id="attModal" class="modal">
     <div class="modal-content">
         <h3 id="attTitle">Appello</h3>
-        <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Segna Tutte Presenti</button>
+        <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Tutte Presenti</button>
         <div id="attPlayersList"></div>
         <hr>
-        <div style="background: #fff1f2; padding: 12px; border-radius: 8px;">
-            <button class="btn-main btn-danger" onclick="deleteTraining()">🗑️ Elimina Solo Oggi</button>
-            <button class="btn-main btn-warning" onclick="deleteSeries()">📅 Elimina Serie Settimanale</button>
-        </div>
+        <button class="btn-main btn-danger" onclick="deleteTraining()">Elimina Oggi</button>
+        <button class="btn-main btn-warning" onclick="deleteSeries()">Elimina Serie</button>
         <button class="btn-main" onclick="closeModal('attModal')" style="background: #64748b;">Esci</button>
     </div>
 </div>
@@ -118,8 +128,9 @@
 
 <script>
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
-let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
+let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null;
 
+// Utility per date senza errori fuso orario
 function formatDate(date) {
     let d = new Date(date), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
     if (month.length < 2) month = '0' + month;
@@ -128,7 +139,7 @@ function formatDate(date) {
 }
 
 async function syncToCloud() {
-    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); updateStats(); } catch(e) { console.error("Cloud Error"); }
+    try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); renderCalendar(); } catch(e) {}
 }
 
 async function loadFromCloud() {
@@ -143,6 +154,7 @@ function showPage(page) {
     document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
     document.getElementById(page).classList.remove('hidden');
     if(page === 'home') { renderCalendar(); updateStats(); }
+    if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
 }
 
 function renderCalendar() {
@@ -151,7 +163,7 @@ function renderCalendar() {
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth', locale: 'it', height: 'auto',
         events: trainings.map(t => ({ id: t.id, title: `${t.startTime}-${t.endTime}`, start: t.date })),
-        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = "Data: " + info.dateStr; document.getElementById('trainingModal').style.display='block'; },
+        dateClick: (info) => { selectedDate = info.dateStr; document.getElementById('selDateText').innerText = info.dateStr; document.getElementById('trainingModal').style.display='block'; },
         eventClick: (info) => openAtt(info.event.id)
     });
     calendar.render();
@@ -168,16 +180,17 @@ function saveTraining() {
     closeModal('trainingModal'); syncToCloud();
 }
 
+// Eliminazione serie corretta locale
 function deleteSeries() {
     const t = trainings.find(x => x.id == currentTid);
-    const numWeeks = prompt("Quante settimane vuoi eliminare?", "4");
+    const numWeeks = prompt("Quante settimane di eliminazione?", "4");
     if(!numWeeks || isNaN(numWeeks)) return;
     const datesToDelete = [];
     for(let i=0; i < parseInt(numWeeks); i++) {
         let d = new Date(t.date); d.setDate(d.getDate() + (i * 7));
         datesToDelete.push(formatDate(d));
     }
-    if(confirm("Elimino le date: " + datesToDelete.join(", "))) {
+    if(confirm("Eliminare le date: " + datesToDelete.join(", "))) {
         trainings = trainings.filter(item => !datesToDelete.includes(item.date));
         closeModal('attModal'); syncToCloud();
     }
@@ -197,7 +210,6 @@ function openAtt(tid) {
             <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px;">
                 <option value="presente" ${s==='presente'?'selected':''}>✅</option>
                 <option value="assente" ${s==='assente'?'selected':''}>❌</option>
-                <option value="infortunio" ${s==='infortunio'?'selected':''}>🤕</option>
             </select></div>`;
     }).join("");
     document.getElementById('attModal').style.display='block';
@@ -215,8 +227,7 @@ function savePlayer() {
 }
 
 function renderFullList() {
-    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
-        <div class="player-item"><strong>${p.name}</strong><button onclick="editPlayer(${p.id})">✏️</button></div>`).join("");
+    document.getElementById("fullPlayerList").innerHTML = players.map(p => `<div class="player-item"><strong>${p.name}</strong><button onclick="editPlayer(${p.id})">✏️</button></div>`).join("");
 }
 
 function editPlayer(id) {
@@ -239,18 +250,52 @@ function updateStats() {
     statsChart = new Chart(ctx, { type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 
-// DRAG & DROP LAVAGNA
+// --- JS LAVAGNA (DISEGNO CAMPO E DRAG) ---
+function drawVolleyCourt() {
+    const cvs = document.getElementById('tacticsCanvas'); 
+    const c = cvs.getContext('2d');
+    c.clearRect(0, 0, 300, 500); 
+    
+    // Stile linee
+    c.strokeStyle = "white"; 
+    c.lineWidth = 3; 
+    
+    // Perimetro
+    c.strokeRect(0, 0, 300, 500);
+    
+    // Rete (Metà campo)
+    c.beginPath(); c.moveTo(0, 250); c.lineTo(300, 250); c.stroke();
+    
+    // Linee d'attacco (Tratteggiate)
+    c.setLineDash([5, 5]);
+    c.beginPath(); 
+    c.moveTo(0, 167); c.lineTo(300, 167); // Attacco superiore
+    c.moveTo(0, 333); c.lineTo(300, 333); // Attacco inferiore
+    c.stroke();
+    c.setLineDash([]); // Reset tratteggio
+}
+
 function dragPlayer(el) {
     el.onmousedown = el.ontouchstart = (e) => {
-        e.preventDefault(); let x = e.clientX || e.touches[0].clientX; let y = e.clientY || e.touches[0].clientY;
+        e.preventDefault(); 
+        let x = e.clientX || (e.touches ? e.touches[0].clientX : 0); 
+        let y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
+        // Se è nella panchina, staccalo e mettilo nel layout tattico
         if(el.parentElement.classList.contains('bench')) {
-            const rect = el.getBoundingClientRect(); const pRect = document.getElementById('tacticsLayout').getBoundingClientRect();
-            el.style.position = 'absolute'; el.style.top = (rect.top - pRect.top) + 'px'; el.style.left = (rect.left - pRect.left) + 'px';
+            const rect = el.getBoundingClientRect(); 
+            const pRect = document.getElementById('tacticsLayout').getBoundingClientRect();
+            el.style.position = 'absolute'; 
+            el.style.top = (rect.top - pRect.top) + 'px'; 
+            el.style.left = (rect.left - pRect.left) + 'px';
             document.getElementById('tacticsLayout').appendChild(el);
         }
+        
         document.onmousemove = document.ontouchmove = (ev) => {
-            let nx = ev.clientX || ev.touches[0].clientX; let ny = ev.clientY || ev.touches[0].clientY;
-            el.style.left = (el.offsetLeft + (nx - x)) + "px"; el.style.top = (el.offsetTop + (ny - y)) + "px";
+            let nx = ev.clientX || (ev.touches ? ev.touches[0].clientX : 0); 
+            let ny = ev.clientY || (ev.touches ? ev.touches[0].clientY : 0);
+            el.style.left = (el.offsetLeft + (nx - x)) + "px"; 
+            el.style.top = (el.offsetTop + (ny - y)) + "px";
             x = nx; y = ny;
         };
         document.onmouseup = document.ontouchend = () => { document.onmousemove = document.ontouchmove = null; };
