@@ -45,4 +45,171 @@
         /* Stili Form Giocatori */
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 4px; }
-        input, select { width: 100%; padding: 12px; margin: 0; border-radius: 8px; border
+        input, select { width: 100%; padding: 12px; margin: 0; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 15px; background: #fff; }
+        
+        /* Layout lista atlete riordinabile */
+        #fullPlayerList { display: flex; flex-direction: column; gap: 5px; }
+        .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border: 1px solid #e2e8f0; border-radius: 8px; background: var(--white); cursor: grab; user-select: none; transition: transform 0.1s, box-shadow 0.1s; }
+        .player-item.dragging { opacity: 0.4; background: #eff6ff; border: 1px dashed var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .player-left-group { display: flex; align-items: center; gap: 15px; flex: 1; }
+        .drag-handle { color: #94a3b8; font-size: 22px; cursor: grab; padding: 5px; touch-action: none; display: inline-block; user-select: none; }
+        .player-info { display: flex; flex-direction: column; gap: 2px; }
+        .player-role-sub { font-size: 13px; color: #64748b; font-weight: 500; }
+        .player-item button { background: none; border: none; font-size: 18px; cursor: pointer; padding: 8px; z-index: 10; }
+    </style>
+</head>
+<body>
+
+<header>🏐 Volley Manager Cloud Pro</header>
+
+<div class="container">
+    <div id="home">
+        <div class="card"><div class="section-title"><span>📅</span> Calendario Allenamenti</div><div id="calendar">Caricamento calendario...</div></div>
+        <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze Squadra</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
+    </div>
+
+    <div id="team" class="hidden">
+        <div class="card">
+            <h3 style="margin-top:0; color: var(--primary); margin-bottom: 15px;">Gestione Atleta</h3>
+            
+            <div class="form-group">
+                <label for="pName">Nome e Cognome:</label>
+                <input id="pName" placeholder="Es. Mario Rossi">
+            </div>
+
+            <div class="form-group">
+                <label for="pBirthDate">Data di Nascita:</label>
+                <input id="pBirthDate" type="date">
+            </div>
+
+            <div class="form-group">
+                <label for="pNumber">Numero di Maglia:</label>
+                <input id="pNumber" type="number" placeholder="Es. 7" min="0" max="99">
+            </div>
+
+            <div class="form-group">
+                <label for="pRole">Ruolo di Gioco:</label>
+                <select id="pRole">
+                    <option value="P">Palleggiatore (P)</option>
+                    <option value="S">Schiacciatore (S)</option>
+                    <option value="C">Centrale (C)</option>
+                    <option value="O">Opposto (O)</option>
+                    <option value="L">Libero (L)</option>
+                </select>
+            </div>
+
+            <input type="hidden" id="editingId">
+            <button class="btn-main" onclick="savePlayer()">Salva Inserimento</button>
+        </div>
+        <div class="card">
+            <div class="section-title"><span>👥</span> Lista Atlete <small style="font-weight:normal; font-size:11px; color:#64748b; margin-left:auto;">Trascina ☰ per riordinare</small></div>
+            <div id="fullPlayerList"></div>
+        </div>
+    </div>
+
+    <div id="tactics" class="hidden">
+        <div class="card">
+            <div class="section-title"><span>📋</span> Lavagna Tattica Orientabile</div>
+            
+            <div class="tactics-layout" id="tacticsLayout">
+                <div class="bench" id="playerBench">
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">S</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">O</div>
+                    <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
+                </div>
+
+                <div class="court-container" id="courtFrame">
+                    <canvas id="tacticsCanvas" width="300" height="500"></canvas>
+                    
+                    <div class="player-circle" style="top:380px; left:132px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
+                    <div class="player-circle" style="top:180px; left:132px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
+                    <div class="player-circle" style="top:180px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
+                    <div class="player-circle" style="top:180px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">2</div>
+                    <div class="player-circle" style="top:380px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">5</div>
+                    <div class="player-circle" style="top:380px; right:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="trainingModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--primary);">Nuovo Allenamento</h3>
+        <p style="font-weight: bold; background:#e2e8f0; padding:8px; border-radius:5px;" id="selDateText"></p>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1;"><label>Inizio:</label><input type="time" id="startTime" value="18:30"></div>
+            <div style="flex:1;"><label>Fine:</label><input type="time" id="endTime" value="20:30"></div>
+        </div>
+        <label style="margin-top:10px; display:block;">Ripeti settimanalmente per X settimane:</label>
+        <input type="number" id="repeatWeeks" value="1" min="1">
+        <button class="btn-main" onclick="saveTraining()">Crea Sessione/i</button>
+        <button onclick="closeModal('trainingModal')" style="width:100%; border:none; background:none; margin-top:12px; color:#64748b; cursor:pointer;">Annulla</button>
+    </div>
+</div>
+
+<div id="attModal" class="modal">
+    <div class="modal-content">
+        <h3 id="attTitle" style="margin-top:0; color:var(--primary);">Appello</h3>
+        <button class="btn-main" style="background:#10b981; margin-bottom:15px;" onclick="setAllPresent()">✅ Tutte Presenti</button>
+        <div id="attPlayersList" style="max-height: 200px; overflow-y:auto; padding-right:5px;"></div>
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
+        <button class="btn-main btn-danger" onclick="deleteTraining()">Elimina Solo Oggi</button>
+        <button class="btn-main btn-warning" onclick="deleteSeries()">Elimina Intera Serie</button>
+        <button class="btn-main" onclick="closeModal('attModal')" style="background: #64748b;">Esci senza salvare</button>
+    </div>
+</div>
+
+<div class="nav">
+    <button id="nav-home" class="active" onclick="showPage('home')">🏠<span>Home</span></button>
+    <button id="nav-team" onclick="showPage('team')">👥<span>Squadra</span></button>
+    <button id="nav-tactics" onclick="showPage('tactics')">📋<span>Lavagna</span></button>
+</div>
+
+<script>
+const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
+let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
+let draggedItem = null;
+
+const roleLabels = { "P": "Palleggiatore", "S": "Schiacciatore", "C": "Centrale", "O": "Opposto", "L": "Libero" };
+
+function formatDate(date) {
+    let d = new Date(date), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+    return [year, month, day].join('-');
+}
+
+function formatItalianDate(dateStr) {
+    if(!dateStr) return "";
+    const parts = dateStr.split('-');
+    if(parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+async function syncToCloud() {
+    try { 
+        await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify({players, trainings}) }); 
+        renderCalendar(); 
+        updateStats();
+    } catch(e) { console.error("Errore sincronizzazione cloud:", e); }
+}
+
+async function loadFromCloud() {
+    try {
+        const res = await fetch(CLOUD_URL).catch(() => null);
+        if (res) {
+            const data = await res.json().catch(() => null);
+            if(data) { 
+                players = data.players || []; 
+                trainings = data.trainings || []; 
+            }
+        }
+    } catch(e) { 
+        console.error("Cloud non raggiungibile, uso dati locali provvisori.", e);
+    }
+    renderFullList
