@@ -171,6 +171,7 @@
 </div>
 
 <script>
+// NOTA: Se hai rigenerato il link Web App su Apps Script, sostituisci questo indirizzo con quello nuovo.
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
 let draggedItem = null;
@@ -213,7 +214,6 @@ async function loadFromCloud() {
         console.error("Cloud temporaneamente non raggiungibile:", e);
     }
     renderFullList(); 
-    // Avvia il rendering sicuro della home
     renderCalendar();
     updateStats();
 }
@@ -237,7 +237,6 @@ function showPage(page) {
 
 function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
-    // PROTEZIONE: Se l'elemento non esiste o FullCalendar non è ancora caricato in memoria, esce senza rompere lo script
     if (!calendarEl || typeof FullCalendar === 'undefined') return;
     
     try {
@@ -256,7 +255,7 @@ function renderCalendar() {
         });
         calendar.render();
     } catch (e) {
-        console.error("Errore inizializzazione calendario:", e);
+        console.error("Errore rendering calendario:", e);
     }
 }
 
@@ -348,240 +347,4 @@ function savePlayer() {
     if(!n.trim()) return;
     
     if(eid) { 
-        const idx = players.findIndex(p => p.id == eid); 
-        if(idx !== -1) {
-            players[idx].name = n;
-            players[idx].birthDate = bdate;
-            players[idx].number = num;
-            players[idx].role = r;
-        } 
-    } else { 
-        players.push({ id: "P_" + Date.now(), name: n, birthDate: bdate, number: num, role: r, attendance: {} }); 
-    }
-    resetForm(); 
-    renderFullList(); 
-    syncToCloud();
-}
-
-function renderFullList() {
-    const listEl = document.getElementById("fullPlayerList");
-    if(!listEl) return;
-    if(players.length === 0) {
-        listEl.innerHTML = "<p style='color:gray;'>Nessuna atleta registrata.</p>";
-        return;
-    }
-    listEl.innerHTML = players.map(p => {
-        const ruoloEsteso = roleLabels[p.role] || "Non assegnato";
-        const visualizzaNumero = p.number ? ` N°${p.number}` : '';
-        const visualizzaData = p.birthDate ? ` • Nata il: ${formatItalianDate(p.birthDate)}` : '';
-        return `
-        <div class="player-item" draggable="true" data-id="${p.id}">
-            <div class="player-left-group">
-                <span class="drag-handle">☰</span>
-                <div class="player-info">
-                    <strong>${p.name}${visualizzaNumero}</strong>
-                    <span class="player-role-sub">${ruoloEsteso}${visualizzaData}</span>
-                </div>
-            </div>
-            <button onclick="editPlayer('${p.id}')">✏️</button>
-        </div>`;
-    }).join("");
-
-    initSortableList();
-}
-
-function initSortableList() {
-    const list = document.getElementById("fullPlayerList");
-    if(!list) return;
-    const items = list.querySelectorAll(".player-item");
-
-    items.forEach(item => {
-        item.addEventListener("dragstart", (e) => {
-            if (e.target.closest('button')) {
-                e.preventDefault();
-                return;
-            }
-            draggedItem = item;
-            setTimeout(() => item.classList.add("dragging"), 0);
-        });
-
-        item.addEventListener("dragend", () => {
-            item.classList.remove("dragging");
-            draggedItem = null;
-            reorderPlayersArray();
-        });
-
-        const handle = item.querySelector(".drag-handle");
-        if(handle) {
-            handle.addEventListener("touchstart", (e) => {
-                draggedItem = item;
-                item.classList.add("dragging");
-            }, { passive: true });
-
-            handle.addEventListener("touchend", () => {
-                if (draggedItem) {
-                    draggedItem.classList.remove("dragging");
-                    draggedItem = null;
-                    reorderPlayersArray();
-                }
-            });
-        }
-    });
-
-    list.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        if (!draggedItem) return;
-        const afterElement = getDragAfterElement(list, e.clientY);
-        if (afterElement == null) {
-            list.appendChild(draggedItem);
-        } else {
-            list.insertBefore(draggedItem, afterElement);
-        }
-    });
-
-    list.addEventListener("touchmove", (e) => {
-        if (!draggedItem) return;
-        const touch = e.touches[0];
-        const afterElement = getDragAfterElement(list, touch.clientY);
-        if (afterElement == null) {
-            list.appendChild(draggedItem);
-        } else {
-            list.insertBefore(draggedItem, afterElement);
-        }
-    });
-}
-
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll(".player-item:not(.dragging)")];
-
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-function reorderPlayersArray() {
-    const list = document.getElementById("fullPlayerList");
-    const DOMItems = [...list.querySelectorAll(".player-item")];
-    
-    const newOrderedPlayers = DOMItems.map(item => {
-        const id = item.getAttribute("data-id");
-        return players.find(p => p.id === id);
-    }).filter(p => p !== undefined);
-
-    players = newOrderedPlayers;
-    syncToCloud();
-}
-
-function editPlayer(id) {
-    const p = players.find(x => x.id == id);
-    if(!p) return;
-    document.getElementById("pName").value = p.name; 
-    document.getElementById("pBirthDate").value = p.birthDate || "";
-    document.getElementById("pNumber").value = p.number || "";
-    document.getElementById("pRole").value = p.role || "P";
-    document.getElementById("editingId").value = p.id;
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function resetForm() { 
-    document.getElementById("pName").value = ""; 
-    document.getElementById("pBirthDate").value = ""; 
-    document.getElementById("pNumber").value = ""; 
-    document.getElementById("pRole").value = "P"; 
-    document.getElementById("editingId").value = ""; 
-}
-
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function updateStats() {
-    const chartEl = document.getElementById('statsChart');
-    // PROTEZIONE: Se Chart.js non è ancora scaricata o la tabella è vuota, esce in sicurezza
-    if(!chartEl || typeof Chart === 'undefined') return;
-    
-    try {
-        const ctx = chartEl.getContext('2d');
-        if(players.length === 0 || trainings.length === 0) {
-            if(statsChart) statsChart.destroy();
-            return;
-        }
-
-        const data = players.map(p => {
-            const total = trainings.length;
-            const pres = trainings.filter(t => t.attendance[p.name] === "presente" || t.attendance[p.name] === undefined).length;
-            return Math.round((pres/total)*100);
-        });
-
-        if(statsChart) statsChart.destroy();
-        statsChart = new Chart(ctx, { 
-            type: 'bar', 
-            data: { 
-                labels: players.map(p => p.name), 
-                datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a', borderRadius: 5 }] 
-            }, 
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min:0, max:100 } } } 
-        });
-    } catch(e) {
-        console.error("Errore aggiornamento grafici Presenze:", e);
-    }
-}
-
-function drawVolleyCourt() {
-    const cvs = document.getElementById('tacticsCanvas'); 
-    if(!cvs) return;
-    const c = cvs.getContext('2d');
-    c.clearRect(0, 0, 300, 500); 
-    c.strokeStyle = "white"; 
-    c.lineWidth = 4; 
-    c.strokeRect(10, 10, 280, 480);
-    c.lineWidth = 6;
-    c.beginPath(); c.moveTo(10, 250); c.lineTo(290, 250); c.stroke();
-    c.lineWidth = 3;
-    c.beginPath(); c.moveTo(10, 170); c.lineTo(290, 170); c.stroke();
-    c.beginPath(); c.moveTo(10, 330); c.lineTo(290, 330); c.stroke();
-}
-
-function dragPlayer(el) {
-    el.onmousedown = el.ontouchstart = (e) => {
-        e.preventDefault(); 
-        let x = e.clientX || (e.touches ? e.touches[0].clientX : 0); 
-        let y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-        
-        if(el.parentElement.classList.contains('bench')) {
-            const rect = el.getBoundingClientRect(); 
-            const pRect = document.getElementById('tacticsLayout').getBoundingClientRect();
-            el.style.position = 'absolute'; 
-            el.style.top = (rect.top - pRect.top) + 'px'; 
-            el.style.left = (rect.left - pRect.left) + 'px';
-            document.getElementById('tacticsLayout').appendChild(el);
-        }
-        
-        document.onmousemove = document.ontouchmove = (ev) => {
-            let nx = ev.clientX || (ev.touches ? ev.touches[0].clientX : 0); 
-            let ny = ev.clientY || (ev.touches ? ev.touches[0].clientY : 0);
-            let newLeft = el.offsetLeft + (nx - x);
-            let newTop = el.offsetTop + (ny - y);
-            el.style.left = newLeft + "px"; 
-            el.style.top = newTop + "px";
-            x = nx; y = ny;
-        };
-        
-        document.onmouseup = document.ontouchend = () => { 
-            document.onmousemove = document.ontouchmove = null; 
-        };
-    };
-}
-
-// Avvio asincrono: aspetta che la pagina sia pronta, poi carica i dati ed esegue i controlli sulle librerie
-window.addEventListener("load", () => {
-    loadFromCloud();
-});
-</script>
-</body>
-</html>
+        const idx =
