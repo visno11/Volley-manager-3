@@ -42,8 +42,11 @@
         .hidden { display: none !important; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 15px; }
         
+        /* Modifica layout lista atlete */
         .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f1f5f9; }
-        .player-item button { background: none; border: none; font-size: 18px; cursor: pointer; }
+        .player-info { display: flex; flex-direction: column; gap: 2px; }
+        .player-role-sub { font-size: 13px; color: #64748b; font-weight: 500; }
+        .player-item button { background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; }
     </style>
 </head>
 <body>
@@ -59,7 +62,10 @@
     <div id="team" class="hidden">
         <div class="card">
             <h3 style="margin-top:0; color: var(--primary);">Gestione Atleta</h3>
-            <input id="pName" placeholder="Nome e Cognome atleta">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 3;"><input id="pName" placeholder="Nome e Cognome atleta"></div>
+                <div style="flex: 1;"><input id="pNumber" type="number" placeholder="N° Maglia" min="0" max="99"></div>
+            </div>
             <select id="pRole">
                 <option value="P">Palleggiatore (P)</option>
                 <option value="S">Schiacciatore (S)</option>
@@ -143,6 +149,15 @@
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
 
+// Mappatura dei ruoli per la visualizzazione estesa
+const roleLabels = {
+    "P": "Palleggiatore",
+    "S": "Schiacciatore",
+    "C": "Centrale",
+    "O": "Opposto",
+    "L": "Libero"
+};
+
 function formatDate(date) {
     let d = new Date(date), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
     if (month.length < 2) month = '0' + month;
@@ -180,236 +195,4 @@ function showPage(page) {
     document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
     document.getElementById('nav-' + page).classList.add('active');
 
-    if(page === 'home') { 
-        setTimeout(() => { renderCalendar(); updateStats(); }, 50);
-    }
-    if(page === 'tactics') setTimeout(drawVolleyCourt, 50);
-}
-
-function renderCalendar() {
-    const calendarEl = document.getElementById('calendar');
-    if (calendar) calendar.destroy();
-    calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth', 
-        locale: 'it', 
-        height: 'auto',
-        events: trainings.map(t => ({ id: t.id, title: `${t.startTime}-${t.endTime}`, start: t.date })),
-        dateClick: (info) => { 
-            selectedDate = info.dateStr; 
-            document.getElementById('selDateText').innerText = "Data selezionata: " + info.dateStr; 
-            document.getElementById('trainingModal').style.display='block'; 
-        },
-        eventClick: (info) => openAtt(info.event.id)
-    });
-    calendar.render();
-}
-
-function saveTraining() {
-    const start = document.getElementById('startTime').value, end = document.getElementById('endTime').value;
-    const reps = parseInt(document.getElementById('repeatWeeks').value) || 1;
-    const seriesId = "S_" + Date.now(); // ID Unico per tracciare la serie ricorrente
-
-    for(let i=0; i<reps; i++) {
-        let d = new Date(selectedDate + "T00:00:00");
-        d.setDate(d.getDate() + (i * 7));
-        trainings.push({ 
-            id: "T_" + Date.now() + "_" + i, 
-            seriesId: seriesId, 
-            date: formatDate(d), 
-            startTime: start, 
-            endTime: end, 
-            attendance: {} 
-        });
-    }
-    closeModal('trainingModal'); 
-    syncToCloud();
-}
-
-// Logica Corretta: Eliminazione di tutta la serie tramite identificativo comune
-function deleteSeries() {
-    const t = trainings.find(x => x.id == currentTid);
-    if(!t) return;
-    
-    if(!t.seriesId) {
-        if(confirm("Questo allenamento non fa parte di una serie ripetuta. Eliminarlo singolarmente?")) {
-            deleteTraining();
-        }
-        return;
-    }
-
-    if(confirm("Sei sicuro di voler eliminare TUTTI gli allenamenti ricorrenti di questa serie?")) {
-        trainings = trainings.filter(item => item.seriesId !== t.seriesId);
-        closeModal('attModal'); 
-        syncToCloud();
-    }
-}
-
-function deleteTraining() {
-    if(confirm("Eliminare solo l'allenamento di oggi?")) { 
-        trainings = trainings.filter(t => t.id !== currentTid); 
-        closeModal('attModal'); 
-        syncToCloud(); 
-    }
-}
-
-function openAtt(tid) {
-    currentTid = tid; 
-    const t = trainings.find(x => x.id == tid);
-    if(!t) return;
-    document.getElementById('attTitle').innerText = `Appello del ${t.date}`;
-    
-    if(players.length === 0) {
-        document.getElementById('attPlayersList').innerHTML = "<p style='color:gray;font-size:14px;'>Nessun atleta inserito nel database. Vai in 'Squadra'.</p>";
-    } else {
-        document.getElementById('attPlayersList').innerHTML = players.map(p => {
-            const s = t.attendance[p.name] || "presente";
-            return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:#f8fafc; padding:6px 10px; border-radius:8px;">
-                <span style="font-weight:500;">${p.name}</span>
-                <select onchange="updateAtt('${p.name}', this.value)" style="width:auto; padding:5px 10px; margin:0;">
-                    <option value="presente" ${s==='presente'?'selected':''}>✅ Presente</option>
-                    <option value="assente" ${s==='assente'?'selected':''}>❌ Assente</option>
-                </select></div>`;
-        }).join("");
-    }
-    document.getElementById('attModal').style.display='block';
-}
-
-function updateAtt(pname, status) { 
-    const t = trainings.find(x => x.id == currentTid); 
-    if(t) { t.attendance[pname] = status; syncToCloud(); }
-}
-
-function setAllPresent() { 
-    const t = trainings.find(x => x.id == currentTid); 
-    if(t) {
-        players.forEach(p => t.attendance[p.name] = "presente"); 
-        openAtt(currentTid); 
-        syncToCloud(); 
-    }
-}
-
-function savePlayer() {
-    const n = document.getElementById("pName").value, eid = document.getElementById("editingId").value;
-    if(!n.trim()) return;
-    if(eid) { 
-        const idx = players.findIndex(p => p.id == eid); 
-        if(idx !== -1) players[idx].name = n; 
-    } else { 
-        players.push({ id: "P_" + Date.now(), name: n, attendance: {} }); 
-    }
-    resetForm(); 
-    renderFullList(); 
-    syncToCloud();
-}
-
-function renderFullList() {
-    if(players.length === 0) {
-        document.getElementById("fullPlayerList").innerHTML = "<p style='color:gray;'>Nessuna atleta registrata.</p>";
-        return;
-    }
-    document.getElementById("fullPlayerList").innerHTML = players.map(p => `
-        <div class="player-item">
-            <strong>${p.name}</strong>
-            <button onclick="editPlayer('${p.id}')">✏️</button>
-        </div>`).join("");
-}
-
-function editPlayer(id) {
-    const p = players.find(x => x.id == id);
-    if(!p) return;
-    document.getElementById("pName").value = p.name; 
-    document.getElementById("editingId").value = p.id;
-}
-
-function resetForm() { document.getElementById("pName").value = ""; document.getElementById("editingId").value = ""; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function updateStats() {
-    const chartEl = document.getElementById('statsChart');
-    if(!chartEl) return;
-    const ctx = chartEl.getContext('2d');
-    
-    if(players.length === 0 || trainings.length === 0) {
-        if(statsChart) statsChart.destroy();
-        return;
-    }
-
-    const data = players.map(p => {
-        const total = trainings.length;
-        const pres = trainings.filter(t => t.attendance[p.name] === "presente" || t.attendance[p.name] === undefined).length; // Default presente
-        return Math.round((pres/total)*100);
-    });
-
-    if(statsChart) statsChart.destroy();
-    statsChart = new Chart(ctx, { 
-        type: 'bar', 
-        data: { 
-            labels: players.map(p => p.name), 
-            datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a', borderRadius: 5 }] 
-        }, 
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min:0, max:100 } } } 
-    });
-}
-
-// --- JS LAVAGNA (DISEGNO REGOLAMENTARE CAMPO) ---
-function drawVolleyCourt() {
-    const cvs = document.getElementById('tacticsCanvas'); 
-    if(!cvs) return;
-    const c = cvs.getContext('2d');
-    c.clearRect(0, 0, 300, 500); 
-    
-    c.strokeStyle = "white"; 
-    c.lineWidth = 4; 
-    
-    // Perimetro Campo Interno (lasciando un piccolo margine di tolleranza bordo)
-    c.strokeRect(10, 10, 280, 480);
-    
-    // Linea Centrale della Rete (Metà campo esatta a 250px)
-    c.lineWidth = 6;
-    c.beginPath(); c.moveTo(10, 250); c.lineTo(290, 250); c.stroke();
-    
-    // Linee dei 3 Metri (Zona Attacco)
-    c.lineWidth = 3;
-    // Campo Superiore (250 - 80px = 170px)
-    c.beginPath(); c.moveTo(10, 170); c.lineTo(290, 170); c.stroke();
-    // Campo Inferiore (250 + 80px = 330px)
-    c.beginPath(); c.moveTo(10, 330); c.lineTo(290, 330); c.stroke();
-}
-
-function dragPlayer(el) {
-    el.onmousedown = el.ontouchstart = (e) => {
-        e.preventDefault(); 
-        let x = e.clientX || (e.touches ? e.touches[0].clientX : 0); 
-        let y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-        
-        if(el.parentElement.classList.contains('bench')) {
-            const rect = el.getBoundingClientRect(); 
-            const pRect = document.getElementById('tacticsLayout').getBoundingClientRect();
-            el.style.position = 'absolute'; 
-            el.style.top = (rect.top - pRect.top) + 'px'; 
-            el.style.left = (rect.left - pRect.left) + 'px';
-            document.getElementById('tacticsLayout').appendChild(el);
-        }
-        
-        document.onmousemove = document.ontouchmove = (ev) => {
-            let nx = ev.clientX || (ev.touches ? ev.touches[0].clientX : 0); 
-            let ny = ev.clientY || (ev.touches ? ev.touches[0].clientY : 0);
-            
-            let newLeft = el.offsetLeft + (nx - x);
-            let newTop = el.offsetTop + (ny - y);
-            
-            el.style.left = newLeft + "px"; 
-            el.style.top = newTop + "px";
-            x = nx; y = ny;
-        };
-        
-        document.onmouseup = document.ontouchend = () => { 
-            document.onmousemove = document.ontouchmove = null; 
-        };
-    };
-}
-
-window.onload = loadFromCloud;
-</script>
-</body>
-</html>
+    if(page
