@@ -5,8 +5,9 @@
     <title>Volley Manager Cloud Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js" defer></script>
+    <!-- Librerie Esterne con caricamento asincrono controllato -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
     <style>
         :root { --primary: #1e3a8a; --secondary: #f59e0b; --bg: #f1f5f9; --white: #ffffff; --danger: #ef4444; }
@@ -24,7 +25,7 @@
         .nav button.active { color: var(--primary); font-weight: bold; }
         .nav button span { font-size: 11px; margin-top: 2px; }
 
-        /* --- Lavagna Tattica Pro --- */
+        /* Lavagna Tattica */
         .tactics-layout { display: flex; align-items: flex-start; justify-content: center; gap: 15px; position: relative; min-height: 520px; margin-top: 10px; }
         .bench { width: 65px; min-height: 500px; background: #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px; border: 2px dashed #cbd5e1; z-index: 5; }
         .court-container { position: relative; width: 300px; height: 500px; background: #2563eb; border: 4px solid white; border-radius: 8px; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; }
@@ -42,15 +43,13 @@
         .modal-content { background: white; margin: 10% auto; padding: 25px; width: 85%; max-width: 450px; border-radius: 16px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .hidden { display: none !important; }
         
-        /* Stili Form Giocatori */
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 4px; }
         input, select { width: 100%; padding: 12px; margin: 0; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 15px; background: #fff; }
         
-        /* Layout lista atlete riordinabile */
         #fullPlayerList { display: flex; flex-direction: column; gap: 5px; }
-        .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border: 1px solid #e2e8f0; border-radius: 8px; background: var(--white); cursor: grab; user-select: none; transition: transform 0.1s, box-shadow 0.1s; }
-        .player-item.dragging { opacity: 0.4; background: #eff6ff; border: 1px dashed var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border: 1px solid #e2e8f0; border-radius: 8px; background: var(--white); cursor: grab; user-select: none; }
+        .player-item.dragging { opacity: 0.4; background: #eff6ff; border: 1px dashed var(--primary); }
         .player-left-group { display: flex; align-items: center; gap: 15px; flex: 1; }
         .drag-handle { color: #94a3b8; font-size: 22px; cursor: grab; padding: 5px; touch-action: none; display: inline-block; user-select: none; }
         .player-info { display: flex; flex-direction: column; gap: 2px; }
@@ -63,30 +62,19 @@
 <header>🏐 Volley Manager Cloud Pro</header>
 
 <div class="container">
+    <!-- HOME PAGE -->
     <div id="home">
-        <div class="card"><div class="section-title"><span>📅</span> Calendario Allenamenti</div><div id="calendar">Caricamento calendario in corso...</div></div>
+        <div class="card"><div class="section-title"><span>📅</span> Calendario Allenamenti</div><div id="calendar">Inizializzazione modulo calendario...</div></div>
         <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze Squadra</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
+    <!-- TEAM PAGE -->
     <div id="team" class="hidden">
         <div class="card">
             <h3 style="margin-top:0; color: var(--primary); margin-bottom: 15px;">Gestione Atleta</h3>
-            
-            <div class="form-group">
-                <label for="pName">Nome e Cognome:</label>
-                <input id="pName" placeholder="Es. Mario Rossi">
-            </div>
-
-            <div class="form-group">
-                <label for="pBirthDate">Data di Nascita:</label>
-                <input id="pBirthDate" type="date">
-            </div>
-
-            <div class="form-group">
-                <label for="pNumber">Numero di Maglia:</label>
-                <input id="pNumber" type="number" placeholder="Es. 7" min="0" max="99">
-            </div>
-
+            <div class="form-group"><label for="pName">Nome e Cognome:</label><input id="pName" placeholder="Es. Mario Rossi"></div>
+            <div class="form-group"><label for="pBirthDate">Data di Nascita:</label><input id="pBirthDate" type="date"></div>
+            <div class="form-group"><label for="pNumber">Numero di Maglia:</label><input id="pNumber" type="number" placeholder="Es. 7" min="0" max="99"></div>
             <div class="form-group">
                 <label for="pRole">Ruolo di Gioco:</label>
                 <select id="pRole">
@@ -97,7 +85,6 @@
                     <option value="L">Libero (L)</option>
                 </select>
             </div>
-
             <input type="hidden" id="editingId">
             <button class="btn-main" onclick="savePlayer()">Salva Inserimento</button>
         </div>
@@ -107,10 +94,10 @@
         </div>
     </div>
 
+    <!-- TACTICS PAGE -->
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Tattica Orientabile</div>
-            
             <div class="tactics-layout" id="tacticsLayout">
                 <div class="bench" id="playerBench">
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
@@ -121,10 +108,8 @@
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">O</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
                 </div>
-
                 <div class="court-container" id="courtFrame">
                     <canvas id="tacticsCanvas" width="300" height="500"></canvas>
-                    
                     <div class="player-circle" style="top:380px; left:132px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
                     <div class="player-circle" style="top:180px; left:132px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
                     <div class="player-circle" style="top:180px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
@@ -137,6 +122,7 @@
     </div>
 </div>
 
+<!-- MODALS -->
 <div id="trainingModal" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary);">Nuovo Allenamento</h3>
@@ -164,6 +150,7 @@
     </div>
 </div>
 
+<!-- NAVIGAZIONE -->
 <div class="nav">
     <button id="nav-home" class="active" onclick="showPage('home')">🏠<span>Home</span></button>
     <button id="nav-team" onclick="showPage('team')">👥<span>Squadra</span></button>
@@ -171,7 +158,6 @@
 </div>
 
 <script>
-// NOTA: Se hai rigenerato il link Web App su Apps Script, sostituisci questo indirizzo con quello nuovo.
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
 let draggedItem = null;
@@ -235,9 +221,16 @@ function showPage(page) {
     }
 }
 
+// LOGICA ULTRA-SICURA PER IL CALENDARIO
 function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
-    if (!calendarEl || typeof FullCalendar === 'undefined') return;
+    if (!calendarEl) return;
+
+    // Se la libreria FullCalendar non è ancora del tutto pronta nella memoria del browser, riprova tra 200 millisecondi
+    if (typeof FullCalendar === 'undefined') {
+        setTimeout(renderCalendar, 200);
+        return;
+    }
     
     try {
         if (calendar) calendar.destroy();
@@ -255,7 +248,8 @@ function renderCalendar() {
         });
         calendar.render();
     } catch (e) {
-        console.error("Errore rendering calendario:", e);
+        console.error("Errore inizializzazione calendario:", e);
+        calendarEl.innerHTML = "<p style='color:red;padding:10px;'>Errore nel caricamento grafico. Riprova a ricaricare la pagina.</p>";
     }
 }
 
@@ -304,7 +298,7 @@ function openAtt(tid) {
     currentTid = tid; 
     const t = trainings.find(x => x.id == tid);
     if(!t) return;
-    document.getElementById('attTitle').innerText = `Appello del ${t.date}`;
+    document.getElementById('attTitle').innerText = `Appello del ${formatItalianDate(t.date)}`;
     
     if(players.length === 0) {
         document.getElementById('attPlayersList').innerHTML = "<p style='color:gray;font-size:14px;'>Nessun atleta inserito nel database. Vai in 'Squadra'.</p>";
@@ -347,4 +341,197 @@ function savePlayer() {
     if(!n.trim()) return;
     
     if(eid) { 
-        const idx =
+        const idx = players.findIndex(p => p.id == eid); 
+        if(idx !== -1) {
+            players[idx].name = n;
+            players[idx].birthDate = bdate;
+            players[idx].number = num;
+            players[idx].role = r;
+        } 
+    } else { 
+        players.push({ id: "P_" + Date.now(), name: n, birthDate: bdate, number: num, role: r, attendance: {} }); 
+    }
+    resetForm(); 
+    renderFullList(); 
+    syncToCloud();
+}
+
+function renderFullList() {
+    const listEl = document.getElementById("fullPlayerList");
+    if(!listEl) return;
+    if(players.length === 0) {
+        listEl.innerHTML = "<p style='color:gray;'>Nessuna atleta registrata.</p>";
+        return;
+    }
+    listEl.innerHTML = players.map(p => {
+        const ruoloEsteso = roleLabels[p.role] || "Non assegnato";
+        const visualizzaNumero = p.number ? ` N°${p.number}` : '';
+        const visualizzaData = p.birthDate ? ` • Nata il: ${formatItalianDate(p.birthDate)}` : '';
+        return `
+        <div class="player-item" draggable="true" data-id="${p.id}">
+            <div class="player-left-group">
+                <span class="drag-handle">☰</span>
+                <div class="player-info">
+                    <strong>${p.name}${visualizzaNumero}</strong>
+                    <span class="player-role-sub">${ruoloEsteso}${visualizzaData}</span>
+                </div>
+            </div>
+            <button onclick="editPlayer('${p.id}')">✏️</button>
+        </div>`;
+    }).join("");
+
+    initSortableList();
+}
+
+function initSortableList() {
+    const list = document.getElementById("fullPlayerList");
+    if(!list) return;
+    const items = list.querySelectorAll(".player-item");
+
+    items.forEach(item => {
+        item.addEventListener("dragstart", (e) => {
+            if (e.target.closest('button')) {
+                e.preventDefault();
+                return;
+            }
+            draggedItem = item;
+        });
+
+        item.addEventListener("dragend", () => {
+            draggedItem = null;
+            reorderPlayersArray();
+        });
+    });
+
+    list.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!draggedItem) return;
+        const afterElement = getDragAfterElement(list, e.clientY);
+        if (afterElement == null) {
+            list.appendChild(draggedItem);
+        } else {
+            list.insertBefore(draggedItem, afterElement);
+        }
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll(".player-item:not(.dragging)")];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function reorderPlayersArray() {
+    const list = document.getElementById("fullPlayerList");
+    const DOMItems = [...list.querySelectorAll(".player-item")];
+    players = DOMItems.map(item => players.find(p => p.id === item.getAttribute("data-id"))).filter(p => p !== undefined);
+    syncToCloud();
+}
+
+function editPlayer(id) {
+    const p = players.find(x => x.id == id);
+    if(!p) return;
+    document.getElementById("pName").value = p.name; 
+    document.getElementById("pBirthDate").value = p.birthDate || "";
+    document.getElementById("pNumber").value = p.number || "";
+    document.getElementById("pRole").value = p.role || "P";
+    document.getElementById("editingId").value = p.id;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() { 
+    document.getElementById("pName").value = ""; 
+    document.getElementById("pBirthDate").value = ""; 
+    document.getElementById("pNumber").value = ""; 
+    document.getElementById("pRole").value = "P"; 
+    document.getElementById("editingId").value = ""; 
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// LOGICA ULTRA-SICURA PER I GRAFICI
+function updateStats() {
+    const chartEl = document.getElementById('statsChart');
+    if(!chartEl) return;
+
+    if (typeof Chart === 'undefined') {
+        setTimeout(updateStats, 200);
+        return;
+    }
+    
+    try {
+        const ctx = chartEl.getContext('2d');
+        if(players.length === 0 || trainings.length === 0) {
+            if(statsChart) statsChart.destroy();
+            return;
+        }
+
+        const data = players.map(p => {
+            const total = trainings.length;
+            const pres = trainings.filter(t => t.attendance[p.name] === "presente" || t.attendance[p.name] === undefined).length;
+            return Math.round((pres/total)*100);
+        });
+
+        if(statsChart) statsChart.destroy();
+        statsChart = new Chart(ctx, { 
+            type: 'bar', 
+            data: { 
+                labels: players.map(p => p.name), 
+                datasets: [{ label: '% Presenze', data: data, backgroundColor: '#1e3a8a', borderRadius: 5 }] 
+            }, 
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min:0, max:100 } } } 
+        });
+    } catch(e) { console.error("Errore grafico:", e); }
+}
+
+function drawVolleyCourt() {
+    const cvs = document.getElementById('tacticsCanvas'); 
+    if(!cvs) return;
+    const c = cvs.getContext('2d');
+    c.clearRect(0, 0, 300, 500); 
+    c.strokeStyle = "white"; c.lineWidth = 4; c.strokeRect(10, 10, 280, 480);
+    c.lineWidth = 6; c.beginPath(); c.moveTo(10, 250); c.lineTo(290, 250); c.stroke();
+    c.lineWidth = 3; c.beginPath(); c.moveTo(10, 170); c.lineTo(290, 170); c.stroke();
+    c.beginPath(); c.moveTo(10, 330); c.lineTo(290, 330); c.stroke();
+}
+
+function dragPlayer(el) {
+    el.onmousedown = el.ontouchstart = (e) => {
+        e.preventDefault(); 
+        let x = e.clientX || (e.touches ? e.touches[0].clientX : 0); 
+        let y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
+        if(el.parentElement.classList.contains('bench')) {
+            const rect = el.getBoundingClientRect(); 
+            const pRect = document.getElementById('tacticsLayout').getBoundingClientRect();
+            el.style.position = 'absolute'; 
+            el.style.top = (rect.top - pRect.top) + 'px'; 
+            el.style.left = (rect.left - pRect.left) + 'px';
+            document.getElementById('tacticsLayout').appendChild(el);
+        }
+        
+        document.onmousemove = document.ontouchmove = (ev) => {
+            let nx = ev.clientX || (ev.touches ? ev.touches[0].clientX : 0); 
+            let ny = ev.clientY || (ev.touches ? ev.touches[0].clientY : 0);
+            el.style.left = (el.offsetLeft + (nx - x)) + "px"; 
+            el.style.top = (el.offsetTop + (ny - y)) + "px";
+            x = nx; y = ny;
+        };
+        document.onmouseup = document.ontouchend = () => { document.onmousemove = document.ontouchmove = null; };
+    };
+}
+
+// Inizializzazione immediata e pulita
+document.addEventListener("DOMContentLoaded", () => {
+    loadFromCloud();
+});
+</script>
+</body>
+</html>
