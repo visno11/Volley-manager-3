@@ -5,6 +5,7 @@
     <title>Volley Manager Cloud Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <!-- Librerie Esterne Caricate in modo asincrono per non bloccare l'app -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js" defer></script>
 
@@ -47,14 +48,15 @@
         .form-group label { display: block; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 4px; }
         input, select { width: 100%; padding: 12px; margin: 0; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 15px; background: #fff; }
         
-        /* Layout lista atlete ordinabile con Drag & Drop */
-        .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f1f5f9; background: var(--white); cursor: grab; user-select: none; }
-        .player-item.dragging { opacity: 0.5; background: #eff6ff; border: 1px dashed var(--primary); }
-        .player-left-group { display: flex; align-items: center; gap: 10px; }
-        .drag-handle { color: #cbd5e1; font-size: 20px; cursor: grab; }
-        .player-info { display: flex; flex-direction: column; gap: 2px; }
+        /* Layout lista atlete riordinabile */
+        #fullPlayerList { display: flex; flex-direction: column; gap: 5px; }
+        .player-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border: 1px solid #e2e8f0; border-radius: 8px; background: var(--white); cursor: grab; user-select: none; transition: transform 0.1s, box-shadow 0.1s; }
+        .player-item.dragging { opacity: 0.4; background: #eff6ff; border: 1px dashed var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .player-left-group { display: flex; align-items: center; gap: 15px; flex: 1; }
+        .drag-handle { color: #94a3b8; font-size: 22px; cursor: grab; padding: 5px; touch-action: none; display: inline-block; user-select: none; }
+        .player-info { display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
         .player-role-sub { font-size: 13px; color: #64748b; font-weight: 500; }
-        .player-item button { background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; }
+        .player-item button { background: none; border: none; font-size: 18px; cursor: pointer; padding: 8px; z-index: 10; }
     </style>
 </head>
 <body>
@@ -62,11 +64,13 @@
 <header>🏐 Volley Manager Cloud Pro</header>
 
 <div class="container">
+    <!-- HOME PAGE -->
     <div id="home">
         <div class="card"><div class="section-title"><span>📅</span> Calendario Allenamenti</div><div id="calendar">Caricamento calendario...</div></div>
         <div class="card"><div class="section-title"><span>📊</span> Statistiche Presenze Squadra</div><div style="height: 250px;"><canvas id="statsChart"></canvas></div></div>
     </div>
 
+    <!-- TEAM PAGE -->
     <div id="team" class="hidden">
         <div class="card">
             <h3 style="margin-top:0; color: var(--primary); margin-bottom: 15px;">Gestione Atleta</h3>
@@ -101,16 +105,18 @@
             <button class="btn-main" onclick="savePlayer()">Salva Inserimento</button>
         </div>
         <div class="card">
-            <div class="section-title"><span>👥</span> Lista Atlete <small style="font-weight:normal; font-size:12px; color:#64748b; margin-left:auto;">(Trascina per riordinare)</small></div>
+            <div class="section-title"><span>👥</span> Lista Atlete <small style="font-weight:normal; font-size:11px; color:#64748b; margin-left:auto;">Trascina ☰ per riordinare</small></div>
             <div id="fullPlayerList"></div>
         </div>
     </div>
 
+    <!-- TACTICS PAGE -->
     <div id="tactics" class="hidden">
         <div class="card">
             <div class="section-title"><span>📋</span> Lavagna Tattica Orientabile</div>
             
             <div class="tactics-layout" id="tacticsLayout">
+                <!-- Panchina Riserve -->
                 <div class="bench" id="playerBench">
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">P</div>
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">C</div>
@@ -121,9 +127,11 @@
                     <div class="player-circle" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">L</div>
                 </div>
 
+                <!-- Campo da Gioco -->
                 <div class="court-container" id="courtFrame">
                     <canvas id="tacticsCanvas" width="300" height="500"></canvas>
                     
+                    <!-- Sestetto Base Numerato -->
                     <div class="player-circle" style="top:380px; left:132px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">6</div>
                     <div class="player-circle" style="top:180px; left:132px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">3</div>
                     <div class="player-circle" style="top:180px; left:30px;" onmousedown="dragPlayer(this)" ontouchstart="dragPlayer(this)">4</div>
@@ -136,6 +144,7 @@
     </div>
 </div>
 
+<!-- MODAL NUOVO ALLENAMENTO -->
 <div id="trainingModal" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary);">Nuovo Allenamento</h3>
@@ -151,6 +160,7 @@
     </div>
 </div>
 
+<!-- MODAL APPELLO -->
 <div id="attModal" class="modal">
     <div class="modal-content">
         <h3 id="attTitle" style="margin-top:0; color:var(--primary);">Appello</h3>
@@ -163,6 +173,7 @@
     </div>
 </div>
 
+<!-- NAVIGAZIONE INFERIORE -->
 <div class="nav">
     <button id="nav-home" class="active" onclick="showPage('home')">🏠<span>Home</span></button>
     <button id="nav-team" onclick="showPage('team')">👥<span>Squadra</span></button>
@@ -172,6 +183,7 @@
 <script>
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbw7S3mr9f2cY370nC7bl3bLLe21r9y8OQu1-tRbMX-7opzUYzMVCA42mvLIZ7F1E6en/exec";
 let players = [], trainings = [], selectedDate = "", currentTid = null, calendar = null, statsChart = null;
+let draggedItem = null; // Memorizza l'elemento che si sta spostando
 
 const roleLabels = { "P": "Palleggiatore", "S": "Schiacciatore", "C": "Centrale", "O": "Opposto", "L": "Libero" };
 
@@ -382,82 +394,97 @@ function renderFullList() {
         </div>`;
     }).join("");
 
-    initDragAndDropList();
+    initSortableList();
 }
 
-/* Inizializzazione Logica Drag & Drop per la lista */
-function initDragAndDropList() {
+/* Logica di Spostamento Avanzata e Geometrica (Mouse + Touch) */
+function initSortableList() {
     const list = document.getElementById("fullPlayerList");
     const items = list.querySelectorAll(".player-item");
 
     items.forEach(item => {
+        // --- EVENTI DESKTOP (MOUSE) ---
         item.addEventListener("dragstart", () => {
+            draggedItem = item;
             setTimeout(() => item.classList.add("dragging"), 0);
         });
 
         item.addEventListener("dragend", () => {
             item.classList.remove("dragging");
-            // Ricalcola il nuovo ordine dell'array a trascinamento terminato
+            draggedItem = null;
             reorderPlayersArray();
         });
-    });
 
-    list.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        const draggingItem = list.querySelector(".dragging");
-        if(!draggingItem) return;
-        
-        // Calcola l'elemento più vicino al cursore del mouse
-        const siblings = [...list.querySelectorAll(".player-item:not(.dragging)")];
-        const nextSibling = siblings.find(sibling => {
-            return e.clientY <= sibling.getBoundingClientRect().top + sibling.getBoundingClientRect().height / 2;
-        });
-
-        list.insertBefore(draggingItem, nextSibling);
-    });
-
-    // Supporto per il Touch dei dispositivi Mobile (Smartphone/Tablet)
-    items.forEach(item => {
+        // --- EVENTI MOBILE (TOUCH DIRETTO SULLE TRE LINEE ☰) ---
         const handle = item.querySelector(".drag-handle");
+        
         handle.addEventListener("touchstart", (e) => {
+            draggedItem = item;
             item.classList.add("dragging");
-        }, {passive: true});
-
-        handle.addEventListener("touchmove", (e) => {
-            const touch = e.touches[0];
-            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-            const currentDragging = list.querySelector(".dragging");
-            
-            if (targetEl && targetEl.closest(".player-item") && targetEl.closest(".player-item") !== currentDragging) {
-                const sibling = targetEl.closest(".player-item");
-                const rect = sibling.getBoundingClientRect();
-                const next = touch.clientY <= rect.top + rect.height / 2;
-                list.insertBefore(currentDragging, next ? sibling : sibling.nextSibling);
-            }
-        });
+        }, { passive: true });
 
         handle.addEventListener("touchend", () => {
-            const currentDragging = list.querySelector(".dragging");
-            if(currentDragging) {
-                currentDragging.classList.remove("dragging");
+            if (draggedItem) {
+                draggedItem.classList.remove("dragging");
+                draggedItem = null;
                 reorderPlayersArray();
             }
         });
     });
+
+    // Movimento continuo del Mouse
+    list.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!draggedItem) return;
+        const afterElement = getDragAfterElement(list, e.clientY);
+        if (afterElement == null) {
+            list.appendChild(draggedItem);
+        } else {
+            list.insertBefore(draggedItem, afterElement);
+        }
+    });
+
+    // Movimento continuo del Dito (Touch)
+    list.addEventListener("touchmove", (e) => {
+        if (!draggedItem) return;
+        const touch = e.touches[0];
+        // Determina la posizione geometrica esatta del dito sullo schermo
+        const afterElement = getDragAfterElement(list, touch.clientY);
+        if (afterElement == null) {
+            list.appendChild(draggedItem);
+        } else {
+            list.insertBefore(draggedItem, afterElement);
+        }
+    });
+}
+
+/* Funzione geometrica che rileva l'elemento più vicino rispetto alla coordinata Y del cursore/dito */
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll(".player-item:not(.dragging)")];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 function reorderPlayersArray() {
     const list = document.getElementById("fullPlayerList");
     const DOMItems = [...list.querySelectorAll(".player-item")];
     
-    // Costruisce il nuovo array ordinato basandosi sul DOM corrente
+    // Mappa l'array originale basandosi sul nuovo ordine degli elementi visivi a schermo
     const newOrderedPlayers = DOMItems.map(item => {
         const id = item.getAttribute("data-id");
         return players.find(p => p.id === id);
     }).filter(p => p !== undefined);
 
     players = newOrderedPlayers;
-    syncToCloud(); // Salva e sincronizza il nuovo ordine sul Cloud
+    syncToCloud(); // Sincronizza immediatamente il nuovo ordine sul Cloud
 }
 
 function editPlayer(id) {
